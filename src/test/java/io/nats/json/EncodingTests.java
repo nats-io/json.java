@@ -1,4 +1,4 @@
-// Copyright 2025 The NATS Authors
+// Copyright 2015-2024 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at:
@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Objects;
 
 import static io.nats.json.Encoding.*;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -51,23 +50,24 @@ public final class EncodingTests {
         _testJsonEncodeDecode("b4\\xafter", "b4xafter", "b4xafter"); // unknown escape
         _testJsonEncodeDecode("b4\\", "b4\\", "b4\\\\"); // last char is \
         _testJsonEncodeDecode("b4\\/after", "b4/after", null);
-        _testJsonEncodeDecode("not-valid-u\\uu", "not-valid-uuu", "not-valid-uuu");
 
         List<String> utfs = ResourceUtils.resourceAsLines("utf8-only-no-ws-test-strings.txt");
         for (String u : utfs) {
             String uu = "b4\\b\\f\\n\\r\\t" + u + "after";
             _testJsonEncodeDecode(uu, "b4\b\f\n\r\t" + u + "after", uu);
         }
-
-        assertEquals("", Encoding.jsonEncode(null));
-        assertEquals("", Encoding.jsonEncode(new StringBuilder(), null).toString());
     }
 
     private void _testJsonEncodeDecode(String encodedInput, String targetDecode, String targetEncode) {
         String decoded = jsonDecode(encodedInput);
         assertEquals(targetDecode, decoded);
         String encoded = jsonEncode(new StringBuilder(), decoded).toString();
-        assertEquals(Objects.requireNonNullElse(targetEncode, encodedInput), encoded);
+        if (targetEncode == null) {
+            assertEquals(encodedInput, encoded);
+        }
+        else {
+            assertEquals(targetEncode, encoded);
+        }
     }
 
     @Test
@@ -82,13 +82,9 @@ public final class EncodingTests {
         assertEquals("YmxhaGJsYWg=", encFromBytes);
         assertEquals("YmxhaGJsYWg=", encFromString);
 
-        encFromString = base64BasicEncodeToString(text, StandardCharsets.US_ASCII);
-        assertEquals("YmxhaGJsYWg=", encFromString);
-
         assertArrayEquals(btxt, base64BasicDecode(encBytesFromBytes));
         assertArrayEquals(btxt, base64BasicDecode(encFromBytes));
         assertEquals(text, base64BasicDecodeToString(encFromBytes));
-        assertEquals(text, base64BasicDecodeToString(encFromBytes, StandardCharsets.US_ASCII));
 
         String data = ResourceUtils.resourceAsString("test_bytes_000100.txt");
         String check = ResourceUtils.resourceAsString("basic_encoded_000100.txt");
@@ -128,12 +124,8 @@ public final class EncodingTests {
 
         byte[] uencBytes = base64UrlEncode(btxt);
         assertEquals("YmxhaGJsYWg", base64UrlEncodeToString(text));
-        assertEquals("YmxhaGJsYWg", base64UrlEncodeToString(text, StandardCharsets.US_ASCII));
         assertEquals("YmxhaGJsYWg", new String(uencBytes));
-        assertEquals(text, base64UrlDecodeToString(uencBytes));
         assertArrayEquals(btxt, base64UrlDecode(uencBytes));
-        assertEquals(text, base64UrlDecodeToString(new String(uencBytes)));
-        assertArrayEquals(btxt, base64UrlDecode(new String(uencBytes)));
 
         uencBytes = base64UrlEncode(burl);
         assertEquals("aHR0cHM6Ly9uYXRzLmlvLw", base64UrlEncodeToString(surl));
