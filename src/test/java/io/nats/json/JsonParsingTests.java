@@ -1,4 +1,4 @@
-// Copyright 2025 The NATS Authors
+// Copyright 2023-2024 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at:
@@ -16,26 +16,22 @@ package io.nats.json;
 import io.ResourceUtils;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
+import java.time.DateTimeException;
 import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.*;
 
 import static io.nats.json.Encoding.jsonEncode;
+import static io.nats.json.JsonParser.*;
 import static io.nats.json.JsonParser.Option.KEEP_NULLS;
-import static io.nats.json.JsonParser.parse;
-import static io.nats.json.JsonParser.parseUnchecked;
-import static io.nats.json.JsonValue.instance;
-import static io.nats.json.JsonWriteUtils.printFormatted;
-import static io.nats.json.JsonWriteUtils.toKey;
+import static io.nats.json.JsonValueUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public final class JsonParsingTests {
-    static List<String> UTF_STRINGS = ResourceUtils.resourceAsLines("utf8-only-no-ws-test-strings.txt");
 
     private String key(int i) {
         return "key" + i;
@@ -61,7 +57,8 @@ public final class JsonParsingTests {
         addField(key(x++), "b4" + (char) 0 + "after", oMap, list, encodeds, decodeds);
         addField(key(x++), "b4" + (char) 1 + "after", oMap, list, encodeds, decodeds);
 
-        for (String u : UTF_STRINGS) {
+        List<String> utfs = ResourceUtils.resourceAsLines("utf8-only-no-ws-test-strings.txt");
+        for (String u : utfs) {
             String uu = "b4\b\f\n\r\t" + u + "after";
             addField(key(x++), uu, oMap, list, encodeds, decodeds);
         }
@@ -85,9 +82,9 @@ public final class JsonParsingTests {
         for (int i = 0; i < list.size(); i++) {
             JsonValue v = list.get(i);
             assertEquals(v, v.toJsonValue());
+            assertEquals(v.toString("JsonParsingTests"), v.toString(this.getClass()));
             assertEquals(decodeds.get(i), v.string);
             assertEquals(v.toJson(), "\"" + encodeds.get(i) + "\"");
-            assertEquals(v.toString(), "\"" + encodeds.get(i) + "\"");
         }
     }
 
@@ -127,6 +124,14 @@ public final class JsonParsingTests {
         oMap.put("bigIntegerKey1", new JsonValue(new BigInteger("9223372036854775807")));
         oMap.put("bigIntegerKey2", new JsonValue(new BigInteger("-9223372036854775808")));
 
+        // some coverage here
+        JsonValue vMap = new JsonValue(oMap);
+        assertEquals(vMap.toJson(), vMap.toString());
+        String s = JsonValueUtils.readString(vMap, "stringKey");
+        byte[] ba = JsonValueUtils.readBytes(vMap, "stringKey");
+        assertNotNull(ba);
+        assertEquals(s, new String(ba));
+
         validateMapTypes(oMap, oMap, true);
 
         // don't keep nulls
@@ -140,29 +145,20 @@ public final class JsonParsingTests {
         assertNotNull(parsed.map);
         assertEquals(oMap.size(), parsed.map.size());
         validateMapTypes(parsed.map, oMap, true);
-
-        // just some coverage
-        assertEquals(parsed.toJson(), new String(parsed.serialize(), StandardCharsets.UTF_8));
-        String ts = parsed.toString(getClass());
-        assertTrue(ts.startsWith('"' + getClass().getSimpleName() + "\":{"));
-        assertTrue(ts.endsWith("}"));
-        ts = parsed.toString(getClass().getSimpleName());
-        assertTrue(ts.startsWith('"' + getClass().getSimpleName() + "\":{"));
-        assertTrue(ts.endsWith("}"));
     }
 
     private static void validateMapTypes(Map<String, JsonValue> map, Map<String, JsonValue> oMap, boolean original) {
-        assertEquals(JsonValueType.BOOL, map.get("trueKey1").type);
-        assertEquals(JsonValueType.BOOL, map.get("trueKey2").type);
-        assertEquals(JsonValueType.BOOL, map.get("falseKey1").type);
-        assertEquals(JsonValueType.BOOL, map.get("falseKey2").type);
-        assertEquals(JsonValueType.STRING, map.get("stringKey").type);
-        assertEquals(JsonValueType.STRING, map.get("charKey").type);
-        assertEquals(JsonValueType.STRING, map.get("escapeStringKey").type);
-        assertEquals(JsonValueType.INTEGER, map.get("intKey1").type);
-        assertEquals(JsonValueType.INTEGER, map.get("intKey2").type);
-        assertEquals(JsonValueType.LONG, map.get("longKey1").type);
-        assertEquals(JsonValueType.LONG, map.get("longKey2").type);
+        assertEquals(JsonValue.Type.BOOL, map.get("trueKey1").type);
+        assertEquals(JsonValue.Type.BOOL, map.get("trueKey2").type);
+        assertEquals(JsonValue.Type.BOOL, map.get("falseKey1").type);
+        assertEquals(JsonValue.Type.BOOL, map.get("falseKey2").type);
+        assertEquals(JsonValue.Type.STRING, map.get("stringKey").type);
+        assertEquals(JsonValue.Type.STRING, map.get("charKey").type);
+        assertEquals(JsonValue.Type.STRING, map.get("escapeStringKey").type);
+        assertEquals(JsonValue.Type.INTEGER, map.get("intKey1").type);
+        assertEquals(JsonValue.Type.INTEGER, map.get("intKey2").type);
+        assertEquals(JsonValue.Type.LONG, map.get("longKey1").type);
+        assertEquals(JsonValue.Type.LONG, map.get("longKey2").type);
 
         assertNotNull(map.get("trueKey1").bool);
         assertNotNull(map.get("trueKey2").bool);
@@ -200,7 +196,7 @@ public final class JsonParsingTests {
             assertNotNull(oMap.get("bigIntegerKey1").bi);
             assertNotNull(oMap.get("bigIntegerKey2").bi);
 
-            assertEquals(JsonValueType.NULL, map.get("nullKey").type);
+            assertEquals(JsonValue.Type.NULL, map.get("nullKey").type);
             assertNull(map.get("nullKey").object);
             assertEquals(oMap.get("nullKey"), map.get("nullKey"));
         }
@@ -259,9 +255,14 @@ public final class JsonParsingTests {
             assertEquals(v.number, p.number);
         }
 
-        List<JsonValue> mappedList = new JsonValue(list).array;
+        Map<String, JsonValue> rootMap = new HashMap<>();
+        rootMap.put("list", new JsonValue(list));
+        rootMap.put("array", new JsonValue(list.toArray(new JsonValue[0])));
+        root = new JsonValue(rootMap);
+        List<JsonValue> mappedList = readValue(root, "list").array;
+
         List<JsonValue> mappedList2 = parse(new JsonValue(mappedList).toJson()).array;
-        List<JsonValue> mappedArray = new JsonValue(list.toArray(new JsonValue[0])).array;
+        List<JsonValue> mappedArray = readValue(root, "array").array;
         List<JsonValue> mappedArray2 = parse(new JsonValue(list.toArray(new JsonValue[0])).toJson()).array;
         for (int i = 0; i < list.size(); i++) {
             JsonValue v = list.get(i);
@@ -287,16 +288,101 @@ public final class JsonParsingTests {
     }
 
     @Test
+    public void testListReading() {
+        List<JsonValue> jvList = new ArrayList<>();
+        jvList.add(new JsonValue("string1"));
+        jvList.add(new JsonValue("string2"));
+        jvList.add(new JsonValue(""));
+        jvList.add(new JsonValue(true));
+        jvList.add(new JsonValue((String)null));
+        jvList.add(JsonValue.NULL);
+        jvList.add(JsonValue.EMPTY_MAP);
+        jvList.add(JsonValue.EMPTY_ARRAY);
+        jvList.add(new JsonValue(Integer.MAX_VALUE));
+        jvList.add(new JsonValue(Long.MAX_VALUE));
+        Map<String, JsonValue> jvMap = new HashMap<>();
+        jvMap.put("list", new JsonValue(jvList));
+        JsonValue root = new JsonValue(jvMap);
+
+        List<String> list = readStringList(root, "list");
+        assertEquals(3, list.size());
+        assertTrue(list.contains("string1"));
+        assertTrue(list.contains("string2"));
+        assertTrue(list.contains(""));
+
+        list = readStringListIgnoreEmpty(root, "list");
+        assertEquals(2, list.size());
+        assertTrue(list.contains("string1"));
+        assertTrue(list.contains("string2"));
+
+        jvList.remove(0);
+        jvList.remove(0);
+        jvList.remove(0);
+        list = readOptionalStringList(root, "list");
+        assertNull(list);
+
+        list = readOptionalStringList(root, "na");
+        assertNull(list);
+
+        jvList.clear();
+        Duration d0 = Duration.ofNanos(10000000000L);
+        Duration d1 = Duration.ofNanos(20000000000L);
+        Duration d2 = Duration.ofNanos(30000000000L);
+
+        jvList.add(instance(d0));
+        jvList.add(instance(d1));
+        jvList.add(instance(d2));
+        jvList.add(new JsonValue("not duration nanos"));
+
+        root = new JsonValue(jvMap);
+
+        List<Duration> dlist = readNanosList(root, "list");
+        assertEquals(3, dlist.size());
+        assertEquals(d0, dlist.get(0));
+        assertEquals(d1, dlist.get(1));
+        assertEquals(d2, dlist.get(2));
+    }
+
+    @Test
+    public void testGetIntLong() {
+        JsonValue i = new JsonValue(Integer.MAX_VALUE);
+        JsonValue li = new JsonValue((long)Integer.MAX_VALUE);
+        JsonValue lmax = new JsonValue(Long.MAX_VALUE);
+        JsonValue lmin = new JsonValue(Long.MIN_VALUE);
+        assertEquals(Integer.MAX_VALUE, getInteger(i));
+        assertEquals(Integer.MAX_VALUE, getInteger(li));
+        assertNull(getInteger(lmax));
+        assertNull(getInteger(lmin));
+        assertNull(getInteger(JsonValue.NULL));
+        assertNull(getInteger(JsonValue.EMPTY_MAP));
+        assertNull(getInteger(JsonValue.EMPTY_ARRAY));
+
+        assertEquals(Integer.MAX_VALUE, getLong(i));
+        assertEquals(Integer.MAX_VALUE, getLong(li));
+        assertEquals(Long.MAX_VALUE, getLong(lmax));
+        assertEquals(Long.MIN_VALUE, getLong(lmin));
+        assertNull(getLong(JsonValue.NULL));
+        assertNull(getLong(JsonValue.EMPTY_MAP));
+        assertNull(getLong(JsonValue.EMPTY_ARRAY));
+
+        assertEquals(Integer.MAX_VALUE, getLong(i, -1));
+        assertEquals(Integer.MAX_VALUE, getLong(li, -1));
+        assertEquals(Long.MAX_VALUE, getLong(lmax, -1));
+        assertEquals(Long.MIN_VALUE, getLong(lmin, -1));
+        assertEquals(-1, getLong(JsonValue.NULL, -1));
+        assertEquals(-1, getLong(JsonValue.EMPTY_MAP, -1));
+        assertEquals(-1, getLong(JsonValue.EMPTY_ARRAY, -1));
+    }
+
+    @Test
     public void testConstantsAreReadOnly() {
-        //noinspection DataFlowIssue // NO ISSUE, WE KNOW jv.map is NOT NULL
         assertThrows(UnsupportedOperationException.class, () -> JsonValue.EMPTY_MAP.map.put("foo", null));
-        //noinspection DataFlowIssue // NO ISSUE, WE KNOW jv.array is NOT NULL
         assertThrows(UnsupportedOperationException.class, () -> JsonValue.EMPTY_ARRAY.array.add(null));
     }
 
     @Test
     public void testNullJsonValue() {
-        assertEquals(JsonValueType.NULL, JsonValue.NULL.type);
+        assertEquals(JsonValue.Type.NULL, JsonValue.NULL.type);
         assertNull(JsonValue.NULL.object);
         assertNull(JsonValue.NULL.map);
         assertNull(JsonValue.NULL.array);
@@ -316,6 +402,116 @@ public final class JsonParsingTests {
         assertEquals(JsonValue.NULL, new JsonValue((JsonValue[])null));
         assertEquals(JsonValue.NULL, new JsonValue((BigDecimal)null));
         assertEquals(JsonValue.NULL, new JsonValue((BigInteger) null));
+    }
+
+    @Test
+    public void testGetMapped() {
+        ZonedDateTime zdt = DateTimeUtils.gmtNow();
+        Duration dur = Duration.ofNanos(4273);
+        Duration dur2 = Duration.ofNanos(7342);
+
+        JsonValue v = new JsonValue(new HashMap<>());
+        v.map.put("bool", new JsonValue(Boolean.TRUE));
+        v.map.put("string", new JsonValue("hello"));
+        v.map.put("int", new JsonValue(Integer.MAX_VALUE));
+        v.map.put("long", new JsonValue(Long.MAX_VALUE));
+        v.map.put("date", new JsonValue(DateTimeUtils.toRfc3339(zdt)));
+        v.map.put("dur", new JsonValue(dur.toNanos()));
+        v.map.put("strings", new JsonValue(new JsonValue[]{new JsonValue("s1"), new JsonValue("s2")}));
+        v.map.put("durs", new JsonValue(new JsonValue[]{new JsonValue(dur.toNanos()), new JsonValue(dur2.toNanos())}));
+
+        assertNotNull(readValue(v, "string"));
+        assertNull(readValue(v, "na"));
+        assertEquals(JsonValue.EMPTY_MAP, readObject(v, "na"));
+        assertNull(read(null, "na", vv -> vv));
+        assertNull(read(JsonValue.NULL, "na", vv -> vv));
+        assertNull(read(JsonValue.EMPTY_MAP, "na", vv -> vv));
+
+        assertNull(readDate(null, "na"));
+        assertNull(readDate(JsonValue.NULL, "na"));
+        assertNull(readDate(JsonValue.EMPTY_MAP, "na"));
+        assertEquals(zdt, readDate(v, "date"));
+        assertNull(readDate(v, "int"));
+
+        assertFalse(readBoolean(null, "na"));
+        assertFalse(readBoolean(null, "na", false));
+        assertTrue(readBoolean(null, "na", true));
+        assertFalse(readBoolean(JsonValue.NULL, "na"));
+        assertFalse(readBoolean(JsonValue.NULL, "na", false));
+        assertTrue(readBoolean(JsonValue.NULL, "na", true));
+        assertFalse(readBoolean(JsonValue.EMPTY_MAP, "na"));
+        assertFalse(readBoolean(JsonValue.EMPTY_MAP, "na", false));
+        assertTrue(readBoolean(JsonValue.EMPTY_MAP, "na", true));
+        assertFalse(readBoolean(v, "na"));
+        assertFalse(readBoolean(v, "na", false));
+        assertTrue(readBoolean(v, "na", true));
+        assertFalse(readBoolean(v, "int"));
+        assertFalse(readBoolean(v, "int", false));
+        assertTrue(readBoolean(v, "int", true));
+
+        assertTrue(readBoolean(v, "bool"));
+        assertTrue(readBoolean(v, "bool", false));
+        assertFalse(readBoolean(v, "na"));
+        assertFalse(readBoolean(v, "na", false));
+        assertTrue(readBoolean(v, "na", true));
+
+        assertEquals("hello", readString(v, "string"));
+        assertEquals("hello", readString(v, "string", null));
+        assertNull(readString(v, "na"));
+        assertNull(readString(v, "na", null));
+        assertEquals("default", readString(v, "na", "default"));
+        assertNull(readString(JsonValue.NULL, "na"));
+        assertNull(readString(JsonValue.NULL, "na", null));
+        assertEquals("default", readString(JsonValue.NULL, "na", "default"));
+
+        assertEquals(zdt, readDate(v, "date"));
+        assertNull(readDate(v, "na"));
+        assertThrows(DateTimeException.class, () -> readDate(v, "string"));
+
+        assertEquals(Integer.MAX_VALUE, readInteger(v, "int"));
+        assertEquals(Integer.MAX_VALUE, readInteger(v, "int", -1));
+        assertNull(readInteger(v, "string"));
+        assertEquals(-1, readInteger(v, "string", -1));
+        assertNull(readInteger(v, "na"));
+        assertEquals(-1, readInteger(v, "na", -1));
+
+        assertEquals(Long.MAX_VALUE, readLong(v, "long"));
+        assertEquals(Long.MAX_VALUE, readLong(v, "long", -1));
+        assertNull(readLong(v, "string"));
+        assertEquals(-1, readLong(v, "string", -1));
+        assertNull(readLong(v, "na"));
+        assertEquals(-1, readLong(v, "na", -1));
+
+        assertEquals(dur, readNanos(v, "dur"));
+        assertEquals(dur, readNanos(v, "dur", null));
+        assertNull(readNanos(v, "string"));
+        assertNull(readNanos(v, "string", null));
+        assertEquals(dur2, readNanos(v, "string", dur2));
+        assertNull(readNanos(v, "na"));
+        assertNull(readNanos(v, "na", null));
+        assertEquals(dur2, readNanos(v, "na", dur2));
+
+        // these aren't maps
+        JsonValue jvn = new JsonValue(1);
+        JsonValue jvs = new JsonValue("s");
+        JsonValue jvb = new JsonValue(true);
+        JsonValue[] notMaps = new JsonValue[] {JsonValue.NULL, JsonValue.EMPTY_ARRAY, jvn, jvs, jvb};
+
+        for (JsonValue vv : notMaps) {
+            assertNull(readValue(vv, "na"));
+            assertEquals(JsonValue.EMPTY_MAP, readObject(vv, "na"));
+            assertNull(readDate(vv, "na"));
+            assertNull(readInteger(vv, "na"));
+            assertEquals(-1, readInteger(vv, "na", -1));
+            assertNull(readLong(vv, "na"));
+            assertEquals(-2, readLong(vv, "na", -2));
+            assertFalse(readBoolean(vv, "na"));
+            assertNull(readBoolean(vv, "na", null));
+            assertTrue(readBoolean(vv, "na", true));
+            assertFalse(readBoolean(vv, "na", false));
+            assertNull(readNanos(vv, "na"));
+            assertEquals(Duration.ZERO, readNanos(vv, "na", Duration.ZERO));
+        }
     }
 
     @Test
@@ -346,11 +542,8 @@ public final class JsonParsingTests {
         assertEquals(expected, parse(ca));
         assertEquals(expected, parse(ca, 0));
         assertEquals(expected, parse(ca, KEEP_NULLS));
-        assertEquals(expected, parse(ca, 0, KEEP_NULLS));
         assertEquals(expected, parse(ba));
-        assertEquals(expected, parse(ba, 0));
         assertEquals(expected, parse(ba, KEEP_NULLS));
-        assertEquals(expected, parse(ba, 0, KEEP_NULLS));
 
         assertEquals(expected, parseUnchecked(json));
         assertEquals(expected, parseUnchecked(json, 0));
@@ -359,7 +552,6 @@ public final class JsonParsingTests {
         assertEquals(expected, parseUnchecked(ca, 0));
         assertEquals(expected, parseUnchecked(ca, KEEP_NULLS));
         assertEquals(expected, parseUnchecked(ba));
-        assertEquals(expected, parseUnchecked(ba, 0));
         assertEquals(expected, parseUnchecked(ba, KEEP_NULLS));
     }
 
@@ -392,24 +584,18 @@ public final class JsonParsingTests {
         assertEquals(JsonValue.NULL, v);
 
         v = parse("{\"foo\":1,}");
-        assertNotNull(v);
-        assertNotNull(v.map);
         assertEquals(1, v.map.size());
         assertTrue(v.map.containsKey("foo"));
         assertEquals(1, v.map.get("foo").i);
 
         v = parse("INFO{\"foo\":1,}", 4);
-        assertNotNull(v);
-        assertNotNull(v.map);
         assertEquals(1, v.map.size());
         assertTrue(v.map.containsKey("foo"));
         assertEquals(1, v.map.get("foo").i);
 
         v = parse("[\"foo\",]"); // handles dangling commas fine
-        assertNotNull(v);
-        assertNotNull(v.array);
         assertEquals(1, v.array.size());
-        assertEquals("foo", v.array.getFirst().string);
+        assertEquals("foo", v.array.get(0).string);
 
         String s = "foo \b \t \n \f \r \" \\ /";
         String j = "\"" + jsonEncode(s) + "\"";
@@ -420,68 +606,51 @@ public final class JsonParsingTests {
         // every constructor
         String json = "{}";
         new JsonParser(json.toCharArray());
-        new JsonParser(json.toCharArray(), KEEP_NULLS);
+        new JsonParser(json.toCharArray(), Option.KEEP_NULLS);
         parse(json.toCharArray());
         parse(json.toCharArray(), 0);
-        parse(json.toCharArray(), KEEP_NULLS);
-        parse(json.toCharArray(), 0, KEEP_NULLS);
+        parse(json.toCharArray(), Option.KEEP_NULLS);
+        parse(json.toCharArray(), 0, Option.KEEP_NULLS);
         parse(json);
         parse(json, 0);
-        parse(json, KEEP_NULLS);
-        parse(json, 0, KEEP_NULLS);
+        parse(json, Option.KEEP_NULLS);
+        parse(json, 0, Option.KEEP_NULLS);
         parse(json.getBytes());
-        parse(json.getBytes(), KEEP_NULLS);
-        parse(json.getBytes(), 0, KEEP_NULLS);
+        parse(json.getBytes(), Option.KEEP_NULLS);
         parseUnchecked(json.toCharArray());
         parseUnchecked(json.toCharArray(), 0);
-        parseUnchecked(json.toCharArray(), KEEP_NULLS);
-        parseUnchecked(json.toCharArray(), 0, KEEP_NULLS);
+        parseUnchecked(json.toCharArray(), Option.KEEP_NULLS);
+        parseUnchecked(json.toCharArray(), 0, Option.KEEP_NULLS);
         parseUnchecked(json);
         parseUnchecked(json, 0);
-        parseUnchecked(json, KEEP_NULLS);
-        parseUnchecked(json, 0, KEEP_NULLS);
+        parseUnchecked(json, Option.KEEP_NULLS);
+        parseUnchecked(json, 0, Option.KEEP_NULLS);
         parseUnchecked(json.getBytes());
-        parseUnchecked(json.getBytes(), KEEP_NULLS);
-        parseUnchecked(json.getBytes(), 0, KEEP_NULLS);
-
-        // misc
-        json = ResourceUtils.resourceAsString("stream-info.json");
-        JsonValue jv = JsonParser.parseUnchecked(json);
-        printFormatted(jv);
-        printFormatted(json);
-        printFormatted((Object)json);
-        assertEquals("\"JsonParsingTests\":", toKey(this.getClass()));
-        JsonParser.parseUnchecked(json, KEEP_NULLS);
-        JsonParser.parseUnchecked(json, (JsonParser.Option) null);
-        JsonParser.parseUnchecked(json, (JsonParser.Option[]) null);
-
-        printFormatted(",[,]zzz"); // BRANCH COVERAGE
+        parseUnchecked(json.getBytes(), Option.KEEP_NULLS);
     }
 
     private void validateThrows(String json, String errorText) {
         // also provides coverage for every constructor
         validateThrowError(errorText, assertThrows(JsonParseException.class, () -> parse(json.toCharArray())));
         validateThrowError(errorText, assertThrows(JsonParseException.class, () -> parse(json.toCharArray(), 0)));
-        validateThrowError(errorText, assertThrows(JsonParseException.class, () -> parse(json.toCharArray(), KEEP_NULLS)));
-        validateThrowError(errorText, assertThrows(JsonParseException.class, () -> parse(json.toCharArray(), 0, KEEP_NULLS)));
+        validateThrowError(errorText, assertThrows(JsonParseException.class, () -> parse(json.toCharArray(), Option.KEEP_NULLS)));
+        validateThrowError(errorText, assertThrows(JsonParseException.class, () -> parse(json.toCharArray(), 0, Option.KEEP_NULLS)));
         validateThrowError(errorText, assertThrows(JsonParseException.class, () -> parse(json)));
         validateThrowError(errorText, assertThrows(JsonParseException.class, () -> parse(json, 0)));
-        validateThrowError(errorText, assertThrows(JsonParseException.class, () -> parse(json, KEEP_NULLS)));
-        validateThrowError(errorText, assertThrows(JsonParseException.class, () -> parse(json, 0, KEEP_NULLS)));
+        validateThrowError(errorText, assertThrows(JsonParseException.class, () -> parse(json, Option.KEEP_NULLS)));
+        validateThrowError(errorText, assertThrows(JsonParseException.class, () -> parse(json, 0, Option.KEEP_NULLS)));
         validateThrowError(errorText, assertThrows(JsonParseException.class, () -> parse(json.getBytes())));
-        validateThrowError(errorText, assertThrows(JsonParseException.class, () -> parse(json.getBytes(), KEEP_NULLS)));
+        validateThrowError(errorText, assertThrows(JsonParseException.class, () -> parse(json.getBytes(), Option.KEEP_NULLS)));
         validateThrowError(errorText, assertThrows(RuntimeException.class, () -> parseUnchecked(json.toCharArray())));
         validateThrowError(errorText, assertThrows(RuntimeException.class, () -> parseUnchecked(json.toCharArray(), 0)));
-        validateThrowError(errorText, assertThrows(RuntimeException.class, () -> parseUnchecked(json.toCharArray(), KEEP_NULLS)));
-        validateThrowError(errorText, assertThrows(RuntimeException.class, () -> parseUnchecked(json.toCharArray(), 0, KEEP_NULLS)));
+        validateThrowError(errorText, assertThrows(RuntimeException.class, () -> parseUnchecked(json.toCharArray(), Option.KEEP_NULLS)));
+        validateThrowError(errorText, assertThrows(RuntimeException.class, () -> parseUnchecked(json.toCharArray(), 0, Option.KEEP_NULLS)));
         validateThrowError(errorText, assertThrows(RuntimeException.class, () -> parseUnchecked(json)));
         validateThrowError(errorText, assertThrows(RuntimeException.class, () -> parseUnchecked(json, 0)));
-        validateThrowError(errorText, assertThrows(RuntimeException.class, () -> parseUnchecked(json, KEEP_NULLS)));
-        validateThrowError(errorText, assertThrows(RuntimeException.class, () -> parseUnchecked(json, 0, KEEP_NULLS)));
+        validateThrowError(errorText, assertThrows(RuntimeException.class, () -> parseUnchecked(json, Option.KEEP_NULLS)));
+        validateThrowError(errorText, assertThrows(RuntimeException.class, () -> parseUnchecked(json, 0, Option.KEEP_NULLS)));
         validateThrowError(errorText, assertThrows(RuntimeException.class, () -> parseUnchecked(json.getBytes())));
-        validateThrowError(errorText, assertThrows(RuntimeException.class, () -> parseUnchecked(json.getBytes(), 0)));
-        validateThrowError(errorText, assertThrows(RuntimeException.class, () -> parseUnchecked(json.getBytes(), KEEP_NULLS)));
-        validateThrowError(errorText, assertThrows(RuntimeException.class, () -> parseUnchecked(json.getBytes(), 0, KEEP_NULLS)));
+        validateThrowError(errorText, assertThrows(RuntimeException.class, () -> parseUnchecked(json.getBytes(), Option.KEEP_NULLS)));
     }
 
     private static void validateThrowError(String errorText, Exception e) {
@@ -490,27 +659,27 @@ public final class JsonParsingTests {
 
     @Test
     public void testNumberParsing() throws JsonParseException {
-        assertEquals(JsonValueType.INTEGER, parse("1").type);
-        assertEquals(JsonValueType.INTEGER, parse(Integer.toString(Integer.MAX_VALUE)).type);
-        assertEquals(JsonValueType.INTEGER, parse(Integer.toString(Integer.MIN_VALUE)).type);
-        assertEquals(JsonValueType.LONG, parse(Long.toString((long)Integer.MAX_VALUE + 1)).type);
-        assertEquals(JsonValueType.LONG, parse(Long.toString((long)Integer.MIN_VALUE - 1)).type);
-        assertEquals(JsonValueType.DOUBLE, parse("-0").type);
-        assertEquals(JsonValueType.DOUBLE, parse("-0.0").type);
-        assertEquals(JsonValueType.DOUBLE, parse("0.1d").type);
-        assertEquals(JsonValueType.DOUBLE, parse("0.f").type);
-        assertEquals(JsonValueType.DOUBLE, parse("0.1f").type);
-        assertEquals(JsonValueType.DOUBLE, parse("-0x1.fffp1").type);
-        assertEquals(JsonValueType.DOUBLE, parse("0x1.0P-1074").type);
-        assertEquals(JsonValueType.BIG_DECIMAL, parse("0.2").type);
-        assertEquals(JsonValueType.BIG_DECIMAL, parse("244273.456789012345").type);
-        assertEquals(JsonValueType.BIG_DECIMAL, parse("244273.456789012345").type);
-        assertEquals(JsonValueType.BIG_DECIMAL, parse("0.1234567890123456789").type);
-        assertEquals(JsonValueType.BIG_DECIMAL, parse("-24.42e7345").type);
-        assertEquals(JsonValueType.BIG_DECIMAL, parse("-24.42E7345").type);
-        assertEquals(JsonValueType.BIG_DECIMAL, parse("-.01").type);
-        assertEquals(JsonValueType.BIG_DECIMAL, parse("00.001").type);
-        assertEquals(JsonValueType.BIG_INTEGER, parse("12345678901234567890").type);
+        assertEquals(JsonValue.Type.INTEGER, parse("1").type);
+        assertEquals(JsonValue.Type.INTEGER, parse(Integer.toString(Integer.MAX_VALUE)).type);
+        assertEquals(JsonValue.Type.INTEGER, parse(Integer.toString(Integer.MIN_VALUE)).type);
+        assertEquals(JsonValue.Type.LONG, parse(Long.toString((long)Integer.MAX_VALUE + 1)).type);
+        assertEquals(JsonValue.Type.LONG, parse(Long.toString((long)Integer.MIN_VALUE - 1)).type);
+        assertEquals(JsonValue.Type.DOUBLE, parse("-0").type);
+        assertEquals(JsonValue.Type.DOUBLE, parse("-0.0").type);
+        assertEquals(JsonValue.Type.DOUBLE, parse("0.1d").type);
+        assertEquals(JsonValue.Type.DOUBLE, parse("0.f").type);
+        assertEquals(JsonValue.Type.DOUBLE, parse("0.1f").type);
+        assertEquals(JsonValue.Type.DOUBLE, parse("-0x1.fffp1").type);
+        assertEquals(JsonValue.Type.DOUBLE, parse("0x1.0P-1074").type);
+        assertEquals(JsonValue.Type.BIG_DECIMAL, parse("0.2").type);
+        assertEquals(JsonValue.Type.BIG_DECIMAL, parse("244273.456789012345").type);
+        assertEquals(JsonValue.Type.BIG_DECIMAL, parse("244273.456789012345").type);
+        assertEquals(JsonValue.Type.BIG_DECIMAL, parse("0.1234567890123456789").type);
+        assertEquals(JsonValue.Type.BIG_DECIMAL, parse("-24.42e7345").type);
+        assertEquals(JsonValue.Type.BIG_DECIMAL, parse("-24.42E7345").type);
+        assertEquals(JsonValue.Type.BIG_DECIMAL, parse("-.01").type);
+        assertEquals(JsonValue.Type.BIG_DECIMAL, parse("00.001").type);
+        assertEquals(JsonValue.Type.BIG_INTEGER, parse("12345678901234567890").type);
 
         assertTrue(JsonParser.isDecimalNotation("-0"));
         assertTrue(JsonParser.isDecimalNotation("1.1"));
@@ -519,7 +688,7 @@ public final class JsonParsingTests {
         assertFalse(JsonParser.isDecimalNotation("12345"));
 
         String str = new BigInteger( Long.toString(Long.MAX_VALUE) ).add( BigInteger.ONE ).toString();
-        assertEquals(JsonValueType.BIG_INTEGER, parse(str).type);
+        assertEquals(JsonValue.Type.BIG_INTEGER, parse(str).type);
 
         validateThrows("-0x123", "Invalid value.");
         JsonParseException e;
@@ -545,17 +714,15 @@ public final class JsonParsingTests {
 
     @Test
     public void testValueUtilsInstanceDuration() {
-        JsonValue v = JsonValue.instance(Duration.ofSeconds(1));
+        JsonValue v = instance(Duration.ofSeconds(1));
         assertNotNull(v.l);
         assertEquals(1000000000L, v.l);
     }
 
     static class TestSerializableMap implements JsonSerializable {
         @Override
-        @NotNull
         public String toJson() {
             JsonValue v = new JsonValue(new HashMap<>());
-            //noinspection DataFlowIssue // NO ISSUE, WE KNOW jv.map is NOT NULL
             v.map.put("a", new JsonValue("A"));
             v.map.put("b", new JsonValue("B"));
             v.map.put("c", new JsonValue("C"));
@@ -565,10 +732,8 @@ public final class JsonParsingTests {
 
     static class TestSerializableList implements JsonSerializable {
         @Override
-        @NotNull
         public String toJson() {
             JsonValue v = new JsonValue(new ArrayList<>());
-            //noinspection DataFlowIssue // NO ISSUE, WE KNOW jv.array is NOT NULL
             v.array.add(new JsonValue("X"));
             v.array.add(new JsonValue("Y"));
             v.array.add(new JsonValue("Z"));
@@ -581,7 +746,6 @@ public final class JsonParsingTests {
         List<Object> list = new ArrayList<>();
         list.add("Hello");
         list.add("");
-        list.add(" ");
         list.add('c');
         list.add(1);
         list.add(1L);
@@ -596,34 +760,31 @@ public final class JsonParsingTests {
         list.add(new TestSerializableMap());
         list.add(new TestSerializableList());
         list.add(null);
-        JsonValue v = JsonValue.instance(list);
+        JsonValue v = instance(list);
         assertNotNull(v.array);
-        assertEquals(17, v.array.size());
-        int ix = 0;
-        assertEquals(JsonValueType.STRING, v.array.get(ix).type);
-        assertEquals(JsonValueType.STRING, v.array.get(++ix).type);
-        assertEquals(JsonValueType.STRING, v.array.get(++ix).type);
-        assertEquals(JsonValueType.STRING, v.array.get(++ix).type);
-        assertEquals(JsonValueType.INTEGER, v.array.get(++ix).type);
-        assertEquals(JsonValueType.LONG, v.array.get(++ix).type);
-        assertEquals(JsonValueType.DOUBLE, v.array.get(++ix).type);
-        assertEquals(JsonValueType.FLOAT, v.array.get(++ix).type);
-        assertEquals(JsonValueType.BIG_DECIMAL, v.array.get(++ix).type);
-        assertEquals(JsonValueType.BIG_INTEGER, v.array.get(++ix).type);
-        assertEquals(JsonValueType.BOOL, v.array.get(++ix).type);
-        assertEquals(JsonValueType.MAP, v.array.get(++ix).type);
-        assertEquals(JsonValueType.ARRAY, v.array.get(++ix).type);
-        assertEquals(JsonValueType.ARRAY, v.array.get(++ix).type);
-        assertEquals(JsonValueType.MAP, v.array.get(++ix).type);
-        assertEquals(JsonValueType.ARRAY, v.array.get(++ix).type);
+        assertEquals(16, v.array.size());
+        assertEquals(JsonValue.Type.STRING, v.array.get(0).type);
+        assertEquals(JsonValue.Type.NULL, v.array.get(1).type);
+        assertEquals(JsonValue.Type.STRING, v.array.get(2).type);
+        assertEquals(JsonValue.Type.INTEGER, v.array.get(3).type);
+        assertEquals(JsonValue.Type.LONG, v.array.get(4).type);
+        assertEquals(JsonValue.Type.DOUBLE, v.array.get(5).type);
+        assertEquals(JsonValue.Type.FLOAT, v.array.get(6).type);
+        assertEquals(JsonValue.Type.BIG_DECIMAL, v.array.get(7).type);
+        assertEquals(JsonValue.Type.BIG_INTEGER, v.array.get(8).type);
+        assertEquals(JsonValue.Type.BOOL, v.array.get(9).type);
+        assertEquals(JsonValue.Type.MAP, v.array.get(10).type);
+        assertEquals(JsonValue.Type.ARRAY, v.array.get(11).type);
+        assertEquals(JsonValue.Type.ARRAY, v.array.get(12).type);
+        assertEquals(JsonValue.Type.MAP, v.array.get(13).type);
+        assertEquals(JsonValue.Type.ARRAY, v.array.get(14).type);
+        assertEquals(JsonValue.Type.NULL, v.array.get(15).type);
     }
 
     @Test
     public void testValueUtilsInstanceMap() {
-        Map<String, Object> map = new HashMap<>();
+        Map<Object, Object> map = new HashMap<>();
         map.put("string", "Hello");
-        map.put("empty_is_string", "");
-        map.put("space_is_string", " ");
         map.put("char", 'c');
         map.put("int", 1);
         map.put("long", Long.MAX_VALUE);
@@ -640,15 +801,14 @@ public final class JsonParsingTests {
         map.put("jv", JsonValue.EMPTY_MAP);
         map.put("null", null);
         map.put("jvNull", JsonValue.NULL);
-        validateMap(instance(map), false, false);
+        map.put("empty_is_null", "");
+        validateMap(true, false, instance(map));
     }
 
     @Test
     public void testValueUtilsMapBuilder() {
-        MapBuilder builder = MapBuilder.instance()
+        MapBuilder builder = mapBuilder()
             .put("string", "Hello")
-            .put("empty_is_string", "")
-            .put("space_is_string", " ")
             .put("char", 'c')
             .put("int", 1)
             .put("long", Long.MAX_VALUE)
@@ -664,61 +824,45 @@ public final class JsonParsingTests {
             .put("slist", new TestSerializableList())
             .put("jv", JsonValue.EMPTY_MAP)
             .put("null", null)
-            .put("jvNull", JsonValue.NULL);
-
-        builder.jv.toJson(); // COVERAGE
-        validateMap(builder.toJsonValue(), false, false);
-        validateMap(JsonParser.parseUnchecked(builder.toJson()), true, false);
-        validateMap(JsonParser.parseUnchecked(builder.toJson(), KEEP_NULLS), true, true);
-
-        //noinspection DataFlowIssue // NO ISSUE, WE KNOW jv.map is NOT NULL
-        builder.jv.map.put("jvNull", JsonValue.NULL); // because the original map builder does not put nulls
-        MapBuilder builder2 = MapBuilder.instance()
-            .put("map", builder.jv.map);
-        //noinspection DataFlowIssue // NO ISSUE, WE KNOW jv.map is NOT NULL
-        validateMap(builder2.jv.map.get("map"), false, false);
-
-        builder2 = MapBuilder.instance().putEntries(builder.jv.map);
-        validateMap(builder2.jv, false, false);
-
-        builder2 = MapBuilder.instance().putEntries(null);
-        assertNotNull(builder2.jv.map);
-        assertTrue(builder2.jv.map.isEmpty());
+            .put("jvNull", JsonValue.NULL)
+            .put("empty_is_null", "");
+        validateMap(false, false, builder.toJsonValue());
+        validateMap(false, true, JsonParser.parseUnchecked(builder.toJson()));
     }
 
-    private static void validateMap(JsonValue v, boolean parsed, boolean parsedKeepNulls) {
+    private static void validateMap(boolean checkNull, boolean parsed, JsonValue v) {
         assertNotNull(v.map);
-        assertEquals(JsonValueType.STRING, v.map.get("string").type);
-        assertEquals(JsonValueType.STRING, v.map.get("empty_is_string").type);
-        assertEquals(JsonValueType.STRING, v.map.get("space_is_string").type);
-        assertEquals(JsonValueType.STRING, v.map.get("char").type);
-        assertEquals(JsonValueType.INTEGER, v.map.get("int").type);
-        assertEquals(JsonValueType.LONG, v.map.get("long").type);
+        assertEquals(JsonValue.Type.STRING, v.map.get("string").type);
+        assertEquals(JsonValue.Type.STRING, v.map.get("char").type);
+        assertEquals(JsonValue.Type.INTEGER, v.map.get("int").type);
+        assertEquals(JsonValue.Type.LONG, v.map.get("long").type);
         if (parsed) {
-            assertEquals(JsonValueType.BIG_DECIMAL, v.map.get("double").type);
-            assertEquals(JsonValueType.BIG_DECIMAL, v.map.get("float").type);
-            assertEquals(JsonValueType.LONG, v.map.get("bi").type);
+            assertEquals(JsonValue.Type.BIG_DECIMAL, v.map.get("double").type);
+            assertEquals(JsonValue.Type.BIG_DECIMAL, v.map.get("float").type);
+            assertEquals(JsonValue.Type.LONG, v.map.get("bi").type);
         }
         else {
-            assertEquals(JsonValueType.DOUBLE, v.map.get("double").type);
-            assertEquals(JsonValueType.FLOAT, v.map.get("float").type);
-            assertEquals(JsonValueType.BIG_INTEGER, v.map.get("bi").type);
-            assertEquals(JsonValueType.NULL, v.map.get("jvNull").type);
+            assertEquals(JsonValue.Type.DOUBLE, v.map.get("double").type);
+            assertEquals(JsonValue.Type.FLOAT, v.map.get("float").type);
+            assertEquals(JsonValue.Type.BIG_INTEGER, v.map.get("bi").type);
         }
-        if (parsed && !parsedKeepNulls) {
-            assertEquals(17, v.map.size());
+        assertEquals(JsonValue.Type.BIG_DECIMAL, v.map.get("bd").type);
+        assertEquals(JsonValue.Type.BOOL, v.map.get("bool").type);
+        assertEquals(JsonValue.Type.MAP, v.map.get("map").type);
+        assertEquals(JsonValue.Type.ARRAY, v.map.get("list").type);
+        assertEquals(JsonValue.Type.ARRAY, v.map.get("set").type);
+        assertEquals(JsonValue.Type.MAP, v.map.get("smap").type);
+        assertEquals(JsonValue.Type.ARRAY, v.map.get("slist").type);
+        assertEquals(JsonValue.Type.MAP, v.map.get("jv").type);
+        if (checkNull) {
+            assertEquals(18, v.map.size());
+            assertEquals(JsonValue.Type.NULL, v.map.get("null").type);
+            assertEquals(JsonValue.Type.NULL, v.map.get("jvNull").type);
+            assertEquals(JsonValue.Type.NULL, v.map.get("empty_is_null").type);
         }
         else {
-            assertEquals(19, v.map.size());
+            assertEquals(15, v.map.size());
         }
-        assertEquals(JsonValueType.BIG_DECIMAL, v.map.get("bd").type);
-        assertEquals(JsonValueType.BOOL, v.map.get("bool").type);
-        assertEquals(JsonValueType.MAP, v.map.get("map").type);
-        assertEquals(JsonValueType.ARRAY, v.map.get("list").type);
-        assertEquals(JsonValueType.ARRAY, v.map.get("set").type);
-        assertEquals(JsonValueType.MAP, v.map.get("smap").type);
-        assertEquals(JsonValueType.ARRAY, v.map.get("slist").type);
-        assertEquals(JsonValueType.MAP, v.map.get("jv").type);
     }
 
     @Test
@@ -740,12 +884,12 @@ public final class JsonParsingTests {
         list.add(JsonValue.EMPTY_MAP);
         list.add(null);
         list.add(JsonValue.NULL);
-        validateArray(false, JsonValue.instance(list));
+        validateArray(true, false, instance(list));
     }
 
     @Test
     public void testValueUtilsArrayBuilder() {
-        ArrayBuilder builder = ArrayBuilder.instance()
+        ArrayBuilder builder = arrayBuilder()
             .add("Hello")
             .add('c')
             .add(1)
@@ -762,69 +906,57 @@ public final class JsonParsingTests {
             .add(JsonValue.EMPTY_MAP)
             .add(null)
             .add(JsonValue.NULL);
-        validateArray(false, builder.toJsonValue());
-        validateArray(true, JsonParser.parseUnchecked(builder.toJson()));
-
-        ArrayBuilder builder2 = ArrayBuilder.instance().addItems(builder.jv.array);
-        validateArray(false, builder2.jv);
-
-        builder2 = ArrayBuilder.instance().addItems(null);
-        assertNotNull(builder2.jv.array);
-        assertTrue(builder2.jv.array.isEmpty());
+        validateArray(false, false, builder.toJsonValue());
+        validateArray(false, true, JsonParser.parseUnchecked(builder.toJson()));
     }
 
-    private static void validateArray(boolean parsed, JsonValue v) {
+    private static void validateArray(boolean checkNull, boolean parsed, JsonValue v) {
         assertNotNull(v.array);
-        assertEquals(JsonValueType.STRING, v.array.get(0).type);
-        assertEquals(JsonValueType.STRING, v.array.get(1).type);
-        assertEquals(JsonValueType.INTEGER, v.array.get(2).type);
-        assertEquals(JsonValueType.LONG, v.array.get(3).type);
+        assertEquals(JsonValue.Type.STRING, v.array.get(0).type);
+        assertEquals(JsonValue.Type.STRING, v.array.get(1).type);
+        assertEquals(JsonValue.Type.INTEGER, v.array.get(2).type);
+        assertEquals(JsonValue.Type.LONG, v.array.get(3).type);
         if (parsed) {
-            assertEquals(JsonValueType.BIG_DECIMAL, v.array.get(4).type);
-            assertEquals(JsonValueType.BIG_DECIMAL, v.array.get(5).type);
-            assertEquals(JsonValueType.LONG, v.array.get(7).type);
+            assertEquals(JsonValue.Type.BIG_DECIMAL, v.array.get(4).type);
+            assertEquals(JsonValue.Type.BIG_DECIMAL, v.array.get(5).type);
+            assertEquals(JsonValue.Type.LONG, v.array.get(7).type);
         }
         else {
-            assertEquals(JsonValueType.DOUBLE, v.array.get(4).type);
-            assertEquals(JsonValueType.FLOAT, v.array.get(5).type);
-            assertEquals(JsonValueType.BIG_INTEGER, v.array.get(7).type);
+            assertEquals(JsonValue.Type.DOUBLE, v.array.get(4).type);
+            assertEquals(JsonValue.Type.FLOAT, v.array.get(5).type);
+            assertEquals(JsonValue.Type.BIG_INTEGER, v.array.get(7).type);
         }
-        assertEquals(16, v.array.size());
-        assertEquals(JsonValueType.BIG_DECIMAL, v.array.get(6).type);
-        assertEquals(JsonValueType.BOOL, v.array.get(8).type);
-        assertEquals(JsonValueType.MAP, v.array.get(9).type);
-        assertEquals(JsonValueType.ARRAY, v.array.get(10).type);
-        assertEquals(JsonValueType.MAP, v.array.get(11).type);
-        assertEquals(JsonValueType.ARRAY, v.array.get(12).type);
-        assertEquals(JsonValueType.MAP, v.array.get(13).type);
+        assertEquals(JsonValue.Type.BIG_DECIMAL, v.array.get(6).type);
+        assertEquals(JsonValue.Type.BOOL, v.array.get(8).type);
+        assertEquals(JsonValue.Type.MAP, v.array.get(9).type);
+        assertEquals(JsonValue.Type.ARRAY, v.array.get(10).type);
+        assertEquals(JsonValue.Type.MAP, v.array.get(11).type);
+        assertEquals(JsonValue.Type.ARRAY, v.array.get(12).type);
+        assertEquals(JsonValue.Type.MAP, v.array.get(13).type);
+        if (checkNull) {
+            assertEquals(16, v.array.size());
+            assertEquals(JsonValue.Type.NULL, v.array.get(14).type);
+            assertEquals(JsonValue.Type.NULL, v.array.get(15).type);
+        }
+        else {
+            assertEquals(14, v.array.size());
+        }
     }
 
     @Test
-    public void testJsonParseException() {
-        Exception cause = new Exception("cause");
-        JsonParseException e1 = new JsonParseException("e1");
-        JsonParseException e2 = new JsonParseException("e2", cause);
-        JsonParseException e3 = new JsonParseException(cause);
-        assertEquals("e1", e1.getMessage());
-        assertNull(e1.getCause());
-        assertEquals("e2", e2.getMessage());
-        assertNotNull(e2.getCause());
-        assertEquals("java.lang.Exception: cause", e3.getMessage());
-        assertNotNull(e3.getCause());
+    public void testReadStringStringMap() {
+        JsonValue jv = mapBuilder()
+            .put("stringString", mapBuilder().put("a", "A").put("b", "B").toJsonValue())
+            .put("empty", new HashMap<>())
+            .put("string", "string")
+            .toJsonValue();
 
-    }
-
-    @Test
-    public void testCoverageAndEdges() {
-        ArrayBuilder arrayBuilder = ArrayBuilder.instance();
-        for (String u : UTF_STRINGS) {
-            arrayBuilder.add(u);
-        }
-        arrayBuilder.add("hasU\0U");
-
-        String json = arrayBuilder.toJson();
-        JsonValue jv = JsonParser.parseUnchecked(json);
-        String json2 = jv.toJson();
-        assertEquals(json, json2);
+        assertNull(readStringStringMap(jv, "string"));
+        assertNull(readStringStringMap(jv, "empty"));
+        Map<String, String> stringString = readStringStringMap(jv, "stringString");
+        assertNotNull(stringString);
+        assertEquals(2, stringString.size());
+        assertEquals("A", stringString.get("a"));
+        assertEquals("B", stringString.get("b"));
     }
 }

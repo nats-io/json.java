@@ -7,11 +7,11 @@ plugins {
     id 'jacoco'
     id 'com.github.kt3k.coveralls' version '2.12.2'
     id "org.gradle.test-retry" version "1.1.9"
-    id 'io.github.gradle-nexus.publish-plugin' version '2.0.0'
+    id 'io.github.gradle-nexus.publish-plugin' version '1.1.0'
     id 'signing'
 }
 
-def jarVersion = "3.0.0"
+def jarVersion = "2.22.0"
 group = 'io.nats'
 
 def isMerge = System.getenv("BUILD_EVENT") == "push"
@@ -21,23 +21,18 @@ def isRelease = System.getenv("BUILD_EVENT") == "release"
 version = isRelease ? jarVersion : jarVersion + "-SNAPSHOT"
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 repositories {
     mavenCentral()
     maven { url "https://oss.sonatype.org/content/repositories/releases/" }
-    maven { url "https://repo1.maven.org/maven2/" }
 }
 
 dependencies {
-    implementation 'org.jetbrains:annotations:26.0.2'
-    implementation 'commons-codec:commons-codec:1.18.0'
-
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
-    testImplementation 'nl.jqno.equalsverifier:equalsverifier:4.0'
+    testImplementation 'nl.jqno.equalsverifier:equalsverifier:3.12.3'
 }
 
 test {
@@ -50,7 +45,6 @@ test {
 }
 
 javadoc {
-    options.addBooleanOption('html5', true)
     options.overview = 'src/main/javadoc/overview.html' // relative to source root
     source = sourceSets.main.allJava
     title = "NATS.IO JNats JSON"
@@ -72,12 +66,12 @@ javadoc {
     }
 }
 
-tasks.register('javadocJar', Jar) {
+task javadocJar(type: Jar) {
     archiveClassifier.set('javadoc')
     from javadoc
 }
 
-tasks.register('sourcesJar', Jar) {
+task sourcesJar(type: Jar) {
     archiveClassifier.set('sources')
     from sourceSets.main.allSource
 }
@@ -88,8 +82,14 @@ jacoco {
 
 jacocoTestReport {
     reports {
-        xml.required = true // coveralls plugin depends on xml format report
-        html.required = true
+        xml.enabled = true // coveralls plugin depends on xml format report
+        html.enabled = true
+    }
+    afterEvaluate { // only report on main library not examples
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it,
+                    exclude: ['**/examples**'])
+        }))
     }
 }
 
@@ -151,6 +151,7 @@ if (isRelease) {
         def signingKey = System.getenv('SIGNING_KEY')
         def signingPassword = System.getenv('SIGNING_PASSWORD')
         useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+        sign configurations.archives
         sign publishing.publications.mavenJava
     }
 }

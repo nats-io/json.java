@@ -1,4 +1,4 @@
-// Copyright 2023-2025 The NATS Authors
+// Copyright 2023-2024 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at:
@@ -13,9 +13,6 @@
 
 package io.nats.json;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -24,319 +21,96 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Class that can parse json to a JsonValue
- */
 public class JsonParser {
 
-    /**
-     * Option for parsing.
-     */
-    public enum Option {
-        /**
-         * Keep nulls when parsing. Usually ignored
-         */
-        KEEP_NULLS
-    }
+    public enum Option {KEEP_NULLS}
 
-    /**
-     * Parse Json from a char array
-     * @param json the json
-     * @return the JsonValue
-     * @throws JsonParseException if there is a problem parsing
-     */
-    @NotNull
-    public static JsonValue parse(char @Nullable [] json) throws JsonParseException {
+    public static JsonValue parse(char[] json) throws JsonParseException {
         return new JsonParser(json, 0).parse();
     }
 
-    /**
-     * Parse Json from a char array, starting at the index
-     * @param json the json
-     * @param startIndex the starting index in the array
-     * @return the JsonValue
-     * @throws JsonParseException if there is a problem parsing
-     */
-    @NotNull
-    public static JsonValue parse(char @Nullable [] json, int startIndex) throws JsonParseException {
+    public static JsonValue parse(char[] json, int startIndex) throws JsonParseException {
         return new JsonParser(json, startIndex).parse();
     }
 
-    /**
-     * Parse Json from a char array
-     * @param json the json
-     * @param options options for how to parse
-     * @return the JsonValue
-     * @throws JsonParseException if there is a problem parsing
-     */
-    @NotNull
-    public static JsonValue parse(char @Nullable [] json, @Nullable Option... options) throws JsonParseException {
+    public static JsonValue parse(char[] json, Option... options) throws JsonParseException {
         return new JsonParser(json, 0, options).parse();
     }
 
-    /**
-     * Parse Json from a char array
-     * @param json the json
-     * @param startIndex the starting index in the array
-     * @param options options for how to parse
-     * @return the JsonValue
-     * @throws JsonParseException if there is a problem parsing
-     */
-    @NotNull
-    public static JsonValue parse(char @Nullable [] json, int startIndex, @Nullable Option... options) throws JsonParseException {
+    public static JsonValue parse(char[] json, int startIndex, Option... options) throws JsonParseException {
         return new JsonParser(json, startIndex, options).parse();
     }
 
-
-    /**
-     * Parse Json from a String
-     * @param json the json
-     * @return the JsonValue
-     * @throws JsonParseException if there is a problem parsing
-     */
-    @NotNull
     public static JsonValue parse(String json) throws JsonParseException {
         return new JsonParser(json.toCharArray(), 0).parse();
     }
 
-
-    /**
-     * Parse Json from a String
-     * @param json the json
-     * @param startIndex the starting index in the string
-     * @return the JsonValue
-     * @throws JsonParseException if there is a problem parsing
-     */
-    @NotNull
     public static JsonValue parse(String json, int startIndex) throws JsonParseException {
         return new JsonParser(json.toCharArray(), startIndex).parse();
     }
 
-    /**
-     * Parse Json from a String
-     * @param json the json
-     * @param options options for how to parse
-     * @return the JsonValue
-     * @throws JsonParseException if there is a problem parsing
-     */
-    @NotNull
-    public static JsonValue parse(String json, @Nullable Option... options) throws JsonParseException {
+    public static JsonValue parse(String json, Option... options) throws JsonParseException {
         return new JsonParser(json.toCharArray(), 0, options).parse();
     }
 
-    /**
-     * Parse Json from a String
-     * @param json the json
-     * @param startIndex the starting index in the array
-     * @param options options for how to parse
-     * @return the JsonValue
-     * @throws JsonParseException if there is a problem parsing
-     */
-    @NotNull
-    public static JsonValue parse(String json, int startIndex, @Nullable Option... options) throws JsonParseException {
+    public static JsonValue parse(String json, int startIndex, Option... options) throws JsonParseException {
         return new JsonParser(json.toCharArray(), startIndex, options).parse();
     }
 
-    /**
-     * Parse Json from a byte array
-     * @param json the json
-     * @return the JsonValue
-     * @throws JsonParseException if there is a problem parsing
-     */
-    @NotNull
     public static JsonValue parse(byte[] json) throws JsonParseException {
         return new JsonParser(new String(json, StandardCharsets.UTF_8).toCharArray(), 0).parse();
     }
 
-    /**
-     * Parse Json from a byte array
-     * @param json the json
-     * @param startIndex the starting index in the array
-     * @return the JsonValue
-     * @throws JsonParseException if there is a problem parsing
-     */
-    @NotNull
-    public static JsonValue parse(byte[] json, int startIndex) throws JsonParseException {
-        return new JsonParser(new String(json, StandardCharsets.UTF_8).toCharArray(), startIndex).parse();
-    }
-
-    /**
-     * Parse Json from a byte array
-     * @param json the json
-     * @param options options for how to parse
-     * @return the JsonValue
-     * @throws JsonParseException if there is a problem parsing
-     */
-    @NotNull
-    public static JsonValue parse(byte[] json, @Nullable Option... options) throws JsonParseException {
+    public static JsonValue parse(byte[] json, Option... options) throws JsonParseException {
         return new JsonParser(new String(json, StandardCharsets.UTF_8).toCharArray(), 0, options).parse();
     }
 
-    /**
-     * Parse Json from a byte array
-     * @param json the json
-     * @param startIndex the starting index in the array
-     * @param options options for how to parse
-     * @return the JsonValue
-     * @throws JsonParseException if there is a problem parsing
-     */
-    @NotNull
-    public static JsonValue parse(byte[] json, int startIndex, @Nullable Option... options) throws JsonParseException {
-        return new JsonParser(new String(json, StandardCharsets.UTF_8).toCharArray(), startIndex, options).parse();
-    }
-
-    /**
-     * Parse Json from a char array
-     * @param json the json
-     * @return the JsonValue
-     * @throws RuntimeException if there is a problem parsing
-     */
-    @NotNull
-    public static JsonValue parseUnchecked(char @Nullable [] json) {
+    public static JsonValue parseUnchecked(char[] json) {
         try { return parse(json); }
         catch (JsonParseException j) { throw new RuntimeException(j); }
     }
 
-    /**
-     * Parse Json from a char array
-     * @param json the json
-     * @param startIndex the starting index in the array
-     * @return the JsonValue
-     * @throws RuntimeException if there is a problem parsing
-     */
-    @NotNull
-    public static JsonValue parseUnchecked(char @Nullable [] json, int startIndex) {
+    public static JsonValue parseUnchecked(char[] json, int startIndex) {
         try { return parse(json, startIndex); }
         catch (JsonParseException j) { throw new RuntimeException(j); }
     }
 
-    /**
-     * Parse Json from a char array
-     * @param json the json
-     * @param options options for how to parse
-     * @return the JsonValue
-     * @throws RuntimeException if there is a problem parsing
-     */
-    @NotNull
-    public static JsonValue parseUnchecked(char @Nullable [] json, @Nullable Option... options) {
+    public static JsonValue parseUnchecked(char[] json, Option... options) {
         try { return parse(json, options); }
         catch (JsonParseException j) { throw new RuntimeException(j); }
     }
 
-    /**
-     * Parse Json from a char array
-     * @param json the json
-     * @param startIndex the starting index in the array
-     * @param options options for how to parse
-     * @return the JsonValue
-     * @throws RuntimeException if there is a problem parsing
-     */
-    @NotNull
-    public static JsonValue parseUnchecked(char @Nullable [] json, int startIndex, @Nullable Option... options) {
+    public static JsonValue parseUnchecked(char[] json, int startIndex, Option... options) {
         try { return parse(json, startIndex, options); }
         catch (JsonParseException j) { throw new RuntimeException(j); }
     }
 
-    /**
-     * Parse Json from a String
-     * @param json the json
-     * @return the JsonValue
-     * @throws RuntimeException if there is a problem parsing
-     */
-    @NotNull
     public static JsonValue parseUnchecked(String json) {
         try { return parse(json); }
         catch (JsonParseException j) { throw new RuntimeException(j); }
     }
 
-    /**
-     * Parse Json from a String
-     * @param json the json
-     * @param startIndex the starting index in the string
-     * @return the JsonValue
-     * @throws RuntimeException if there is a problem parsing
-     */
-    @NotNull
     public static JsonValue parseUnchecked(String json, int startIndex) {
         try { return parse(json, startIndex); }
         catch (JsonParseException j) { throw new RuntimeException(j); }
     }
 
-    /**
-     * Parse Json from a String
-     * @param json the json
-     * @param options options for how to parse
-     * @return the JsonValue
-     * @throws RuntimeException if there is a problem parsing
-     */
-    @NotNull
-    public static JsonValue parseUnchecked(String json, @Nullable Option... options) {
+    public static JsonValue parseUnchecked(String json, Option... options) {
         try { return parse(json, options); }
         catch (JsonParseException j) { throw new RuntimeException(j); }
     }
 
-    /**
-     * Parse Json from a String
-     * @param json the json
-     * @param startIndex the starting index in the string
-     * @param options options for how to parse
-     * @return the JsonValue
-     * @throws RuntimeException if there is a problem parsing
-     */
-    @NotNull
-    public static JsonValue parseUnchecked(String json, int startIndex, @Nullable Option... options) {
+    public static JsonValue parseUnchecked(String json, int startIndex, Option... options) {
         try { return parse(json, startIndex, options); }
         catch (JsonParseException j) { throw new RuntimeException(j); }
     }
 
-    /**
-     * Parse Json from a byte array
-     * @param json the json
-     * @return the JsonValue
-     * @throws RuntimeException if there is a problem parsing
-     */
-    @NotNull
     public static JsonValue parseUnchecked(byte[] json) {
         try { return parse(json); }
         catch (JsonParseException j) { throw new RuntimeException(j); }
     }
 
-    /**
-     * Parse Json from a byte array
-     * @param json the json
-     * @param startIndex the starting index in the array
-     * @return the JsonValue
-     * @throws RuntimeException if there is a problem parsing
-     */
-    @NotNull
-    public static JsonValue parseUnchecked(byte[] json, int startIndex) {
-        try { return parse(json); }
-        catch (JsonParseException j) { throw new RuntimeException(j); }
-    }
-
-    /**
-     * Parse Json from a byte array
-     * @param json the json
-     * @param options options for how to parse
-     * @return the JsonValue
-     * @throws RuntimeException if there is a problem parsing
-     */
-    @NotNull
-    public static JsonValue parseUnchecked(byte[] json, @Nullable Option... options) {
-        try { return parse(json, options); }
-        catch (JsonParseException j) { throw new RuntimeException(j); }
-    }
-
-    /**
-     * Parse Json from a byte array
-     * @param json the json
-     * @param startIndex the starting index in the array
-     * @param options options for how to parse
-     * @return the JsonValue
-     * @throws RuntimeException if there is a problem parsing
-     */
-    @NotNull
-    public static JsonValue parseUnchecked(byte[] json, int startIndex, @Nullable Option... options) {
+    public static JsonValue parseUnchecked(byte[] json, Option... options) {
         try { return parse(json, options); }
         catch (JsonParseException j) { throw new RuntimeException(j); }
     }
@@ -350,33 +124,25 @@ public class JsonParser {
     private char current;
     private char next;
 
-    /**
-     * Create a new JsonParse object from a char array
-     * @param json the json
-     */
-    public JsonParser(char @Nullable [] json) {
+    public JsonParser(char[] json) {
         this(json, 0);
     }
 
-    /**
-     * Create a new JsonParse object from a char array
-     * @param json the json
-     * @param options options for how to parse
-     */
-    public JsonParser(char @Nullable [] json, @Nullable Option... options) {
+    public JsonParser(char[] json, Option... options) {
         this(json, 0, options);
     }
 
-    /**
-     * Create a new JsonParse object from a char array
-     * @param json the json
-     * @param startIndex the starting index in the array
-     * @param options options for how to parse
-     */
-    public JsonParser(char @Nullable [] json, int startIndex, @Nullable Option... options) {
+    public JsonParser(char[] json, int startIndex, Option... options) {
         this.json = json;
 
-        keepNulls = options != null && options.length > 0; // KEEP_NULLS is currently the only option
+        boolean kn = false;
+        for (Option o : options) {
+            if (o == Option.KEEP_NULLS) {
+                kn = true;
+                break; // b/c only option currently
+            }
+        }
+        keepNulls = kn;
 
         len = json == null ? 0 : json.length;
         idx = startIndex;
@@ -389,12 +155,6 @@ public class JsonParser {
         next = 0;
     }
 
-    /**
-     * Parse the json
-     * @return a JsonValue
-     * @throws JsonParseException if there is a problem parsing
-     */
-    @NotNull
     public JsonValue parse() throws JsonParseException {
         char c = peekToken();
         if (c == 0) {
@@ -551,7 +311,7 @@ public class JsonParser {
         return next;
     }
 
-    // nextString() assumes you have already seen the starting quote
+    // next string assumes you have already seen the starting quote
     private String nextString() throws JsonParseException {
         StringBuilder sb = new StringBuilder();
         while (true) {

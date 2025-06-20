@@ -1,4 +1,4 @@
-// Copyright 2025 The NATS Authors
+// Copyright 2015-2024 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at:
@@ -13,13 +13,12 @@
 
 package io.nats.json;
 
-import org.jetbrains.annotations.NotNull;
+import io.ResourceUtils;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.nats.json.DateTimeUtils.DEFAULT_TIME;
 import static io.nats.json.JsonWriteUtils.*;
@@ -37,9 +36,8 @@ public final class JsonWriteUtilsTests {
         sb = beginFormattedJson();
         addField(sb, "name", "value");
         String ended = endFormattedJson(sb);
-        String newline = System.lineSeparator();
-        assertEquals("{" + newline + "    \"name\":\"value\"" + newline + "}", ended);
-        assertEquals("{" + newline + "    \"name\":\"value\"" + newline + "}", sb.toString());
+        assertEquals("{\n    \"name\":\"value\"\n}", ended);
+        assertEquals("{\n    \"name\":\"value\"\n}", sb.toString());
 
         sb = beginJsonPrefixed(null);
         assertEquals("{", sb.toString());
@@ -48,392 +46,225 @@ public final class JsonWriteUtilsTests {
         assertEquals("pre{", sb.toString());
     }
 
-
-    private static final String FN = "fn";
-    private static final int ADDED_BASE_LENGTH = 6; // "fn":<>,
-    // static String _last = "";
-    private static void checkLength(StringBuilder sb, AtomicInteger cur, int newAddition) {
-        if (newAddition > 0) {
-            cur.addAndGet(ADDED_BASE_LENGTH + newAddition);
-        }
-        // System.out.println(cur.get() + " |" + sb.substring(_last.length()) + "|");
-        // _last = sb.toString();
-        assertEquals(cur.get(), sb.length());
-    }
-
     @Test
     public void testAddFields() {
         StringBuilder sb = new StringBuilder();
-        AtomicInteger cur = new AtomicInteger();
 
-        addRawJson(sb, FN, null);
-        checkLength(sb, cur, -1);
+        addField(sb, "n/a", (String) null);
+        assertEquals(0, sb.length());
 
-        addRawJson(sb, FN, "");
-        checkLength(sb, cur, -1);
+        addField(sb, "n/a", "");
+        assertEquals(0, sb.length());
 
-        addRawJson(sb, FN, "raw");
-        checkLength(sb, cur, 3); // 3 b/c no quotes
+        addStrings(sb, "n/a", (String[]) null);
+        assertEquals(0, sb.length());
 
-        JsonValue jv = null;
-        addField(sb, FN, jv);
-        checkLength(sb, cur, -1);
+        addStrings(sb, "n/a", new String[0]);
+        assertEquals(0, sb.length());
 
-        jv = new JsonValue("foo");
-        addField(sb, FN, jv);
-        checkLength(sb, cur, 5);
+        addStrings(sb, "n/a", (List<String>) null);
+        assertEquals(0, sb.length());
 
-        addField(sb, FN, (String) null);
-        checkLength(sb, cur, -1);
+        addField(sb, "n/a", (JsonSerializable) null);
+        assertEquals(0, sb.length());
 
-        addField(sb, FN, "");
-        checkLength(sb, cur, -1);
+        addJsons(sb, "n/a", new ArrayList<>());
+        assertEquals(0, sb.length());
 
-        addField(sb, FN, "not-raw");
-        checkLength(sb, cur, 9); // includes quotes around string value
+        addJsons(sb, "n/a", null);
+        assertEquals(0, sb.length());
 
-        addFieldAlways(sb, FN, (String) null);
-        checkLength(sb, cur, 2);
+        addDurations(sb, "n/a", null);
+        assertEquals(0, sb.length());
 
-        addFieldAlways(sb, FN, "");
-        checkLength(sb, cur, 2);
+        addDurations(sb, "n/a", new ArrayList<>());
+        assertEquals(0, sb.length());
 
-        addFieldAlways(sb, "fn", "always");
-        checkLength(sb, cur, 8);
+        addField(sb, "n/a", (Boolean) null);
+        assertEquals(0, sb.length());
 
-        addField(sb, FN, (Boolean) null);
-        checkLength(sb, cur, -1);
+        addFldWhenTrue(sb, "n/a", null);
+        assertEquals(0, sb.length());
 
-        addField(sb, FN, true);
-        checkLength(sb, cur, 4);
+        addFldWhenTrue(sb, "n/a", false);
+        assertEquals(0, sb.length());
 
-        addField(sb, FN, false);
-        checkLength(sb, cur, -1);
+        addField(sb, "n/a", (Integer) null);
+        assertEquals(0, sb.length());
 
-        addFieldAlways(sb, FN, (Boolean) null);
-        checkLength(sb, cur, 5);
+        addField(sb, "n/a", (Long) null);
+        assertEquals(0, sb.length());
 
-        addFieldAlways(sb, FN, true);
-        checkLength(sb, cur, 4);
+        //noinspection UnnecessaryBoxing
+        addField(sb, "iminusone", new Integer(-1));
+        assertEquals(0, sb.length());
 
-        addFieldAlways(sb, FN, false);
-        checkLength(sb, cur, 5);
+        addField(sb, "lminusone", new Long(-1));
+        assertEquals(0, sb.length());
 
-        addField(sb, FN, (Integer) null);
-        checkLength(sb, cur, -1);
+        addStrings(sb, "foo", new String[]{"bbb"});
+        assertEquals(14, sb.length());
 
-        addField(sb, FN, -1);
-        checkLength(sb, cur, -1);
+        addField(sb, "zero", 0);
+        assertEquals(23, sb.length());
 
-        addField(sb, FN, 0);
-        checkLength(sb, cur, 1);
+        addField(sb, "lone", 1);
+        assertEquals(32, sb.length());
 
-        addField(sb, FN, 42);
-        checkLength(sb, cur, 2);
+        addField(sb, "lmax", Long.MAX_VALUE);
+        assertEquals(59, sb.length());
 
-        addFieldWhenGtZero(sb, FN, (Integer) null);
-        checkLength(sb, cur, -1);
+        addField(sb, "btrue", true);
+        assertEquals(72, sb.length());
 
-        addFieldWhenGtZero(sb, FN, -1);
-        checkLength(sb, cur, -1);
+        addField(sb, "bfalse", false);
+        assertEquals(87, sb.length());
 
-        addFieldWhenGtZero(sb, FN, 0);
-        checkLength(sb, cur, -1);
+        addFieldWhenGtZero(sb, "intnull", (Integer) null);
+        assertEquals(87, sb.length());
 
-        addFieldWhenGtZero(sb, FN, 42);
-        checkLength(sb, cur, 2);
+        addFieldWhenGtZero(sb, "longnull", (Long) null);
+        assertEquals(87, sb.length());
 
-        addFieldWhenGteMinusOne(sb, FN, (Integer) null);
-        checkLength(sb, cur, -1);
+        //noinspection UnnecessaryBoxing
+        addFieldWhenGtZero(sb, "intnotgt0", new Integer(0));
+        assertEquals(87, sb.length());
 
-        addFieldWhenGteMinusOne(sb, FN, -2);
-        checkLength(sb, cur, -1);
+        addFieldWhenGtZero(sb, "longnotgt0", 0L);
+        assertEquals(87, sb.length());
 
-        addFieldWhenGteMinusOne(sb, FN, -1);
-        checkLength(sb, cur, 2);
+        //noinspection UnnecessaryBoxing
+        addFieldWhenGtZero(sb, "intgt0", new Integer(1));
+        assertEquals(98, sb.length());
 
-        addFieldWhenGteMinusOne(sb, FN, 0);
-        checkLength(sb, cur, 1);
+        addFieldWhenGtZero(sb, "longgt0", 1L);
+        assertEquals(110, sb.length());
 
-        addFieldWhenGteMinusOne(sb, FN, 42);
-        checkLength(sb, cur, 2);
+        addField(sb, "zdt", (ZonedDateTime)null);
+        assertEquals(110, sb.length());
 
-        addFieldWhenGreaterThan(sb, FN, (Integer) null, -2);
-        checkLength(sb, cur, -1);
+        addField(sb, "zdt", DEFAULT_TIME);
+        assertEquals(110, sb.length());
 
-        addFieldWhenGreaterThan(sb, FN, -2, -2);
-        checkLength(sb, cur, -1);
+        addField(sb, "zdt", DateTimeUtils.gmtNow());
+        assertEquals(149, sb.length());
 
-        addFieldWhenGreaterThan(sb, FN, -1, -2);
-        checkLength(sb, cur, 2);
+        addFieldWhenGreaterThan(sb, "xgt", null, 1);
+        assertEquals(149, sb.length());
 
-        addFieldWhenGreaterThan(sb, FN, 0, -2);
-        checkLength(sb, cur, 1);
+        addFieldWhenGreaterThan(sb, "xgt", 0L, 1);
+        assertEquals(149, sb.length());
 
-        addFieldWhenGreaterThan(sb, FN, 42, -2);
-        checkLength(sb, cur, 2);
+        addFieldWhenGreaterThan(sb, "xgt", 1L, 1);
+        assertEquals(149, sb.length());
 
-        addField(sb, FN, (Long) null);
-        checkLength(sb, cur, -1);
+        addFieldWhenGreaterThan(sb, "xgt", 2L, 1);
+        assertEquals(157, sb.length());
 
-        addField(sb, FN, -1L);
-        checkLength(sb, cur, -1);
+        addRawJson(sb, "n/a", null);
+        assertEquals(157, sb.length());
 
-        addField(sb, FN, 0L);
-        checkLength(sb, cur, 1);
+        addRawJson(sb, "n/a", "");
+        assertEquals(157, sb.length());
 
-        addField(sb, FN, 42L);
-        checkLength(sb, cur, 2);
+        addRawJson(sb, "raw", "raw");
+        assertEquals(167, sb.length());
 
-        addFieldWhenGtZero(sb, FN, (Long) null);
-        checkLength(sb, cur, -1);
+        addFieldEvenEmpty(sb, "ee1", null);
+        assertEquals(176, sb.length());
 
-        addFieldWhenGtZero(sb, FN, -1L);
-        checkLength(sb, cur, -1);
+        addFieldEvenEmpty(sb, "ee2", "");
+        assertEquals(185, sb.length());
 
-        addFieldWhenGtZero(sb, FN, 0L);
-        checkLength(sb, cur, -1);
+        addFieldWhenGteMinusOne(sb, "n/a", null);
+        assertEquals(185, sb.length());
 
-        addFieldWhenGtZero(sb, FN, 42L);
-        checkLength(sb, cur, 2);
+        addFieldWhenGteMinusOne(sb, "n/a", -2L);
+        assertEquals(185, sb.length());
 
-        addFieldWhenGteMinusOne(sb, FN, (Long) null);
-        checkLength(sb, cur, -1);
+        addFieldWhenGteMinusOne(sb, "gtem1", -1L);
+        assertEquals(196, sb.length());
 
-        addFieldWhenGteMinusOne(sb, FN, -2L);
-        checkLength(sb, cur, -1);
+        addFieldAsNanos(sb, "n/a", null);
+        assertEquals(196, sb.length());
 
-        addFieldWhenGteMinusOne(sb, FN, -1L);
-        checkLength(sb, cur, 2);
+        addFieldAsNanos(sb, "n/a", Duration.ZERO);
+        assertEquals(196, sb.length());
 
-        addFieldWhenGteMinusOne(sb, FN, 0L);
-        checkLength(sb, cur, 1);
+        addFieldAsNanos(sb, "n/a", Duration.ofNanos(-1));
+        assertEquals(196, sb.length());
 
-        addFieldWhenGteMinusOne(sb, FN, 42L);
-        checkLength(sb, cur, 2);
+        addFieldAsNanos(sb, "fan", Duration.ofNanos(1000000));
+        assertEquals(210, sb.length());
 
-        addFieldWhenGreaterThan(sb, FN, null, -2L);
-        checkLength(sb, cur, -1);
+        addEnumWhenNot(sb, "n/a", null, JsonValue.Type.STRING);
+        assertEquals(210, sb.length());
 
-        addFieldWhenGreaterThan(sb, FN, -2L, -2L);
-        checkLength(sb, cur, -1);
+        addEnumWhenNot(sb, "n/a", JsonValue.Type.STRING, JsonValue.Type.STRING);
+        assertEquals(210, sb.length());
 
-        addFieldWhenGreaterThan(sb, FN, -1L, -2L);
-        checkLength(sb, cur, 2);
+        addEnumWhenNot(sb, "ewn", JsonValue.Type.STRING, JsonValue.Type.LONG);
+        assertEquals(225, sb.length());
 
-        addFieldWhenGreaterThan(sb, FN, 0L, -2L);
-        checkLength(sb, cur, 1);
+        //noinspection unchecked
+        addField(sb, "n/a", (Map)null);
+        assertEquals(225, sb.length());
 
-        addFieldWhenGreaterThan(sb, FN, 42L, -2L);
-        checkLength(sb, cur, 2);
+        Map<String, String> map = new HashMap<>();
+        addField(sb, "n/a", map);
+        assertEquals(225, sb.length());
 
-        addFieldAsNanos(sb, FN, null);
-        checkLength(sb, cur, -1);
+        map.put("mfoo", "mbar");
+        addField(sb, "afmap", map);
+        assertEquals(249, sb.length());
 
-        addFieldAsNanos(sb, FN, Duration.ZERO);
-        checkLength(sb, cur, -1);
+        addFldWhenTrue(sb, "whentrue", true);
+        assertEquals(265, sb.length());
 
-        addFieldAsNanos(sb, FN, Duration.ofNanos(-1));
-        checkLength(sb, cur, -1);
+        _addList(sb, "al1", new ArrayList<>(), StringBuilder::append);
+        assertEquals(274, sb.length());
 
-        addFieldAsNanos(sb, FN, Duration.ofSeconds(42));
-        checkLength(sb, cur, 11);
+        List<Integer> ilist = new ArrayList<>();
+        _addList(sb, "al2", ilist, StringBuilder::append);
+        assertEquals(283, sb.length());
 
-        addField(sb, FN, (ZonedDateTime) null);
-        checkLength(sb, cur, -1);
-
-        addField(sb, FN, DEFAULT_TIME);
-        checkLength(sb, cur, -1);
-
-        ZonedDateTime zdt = ZonedDateTime.now();
-        String temp = DateTimeUtils.toRfc3339(zdt);
-        addField(sb, FN, zdt);
-        checkLength(sb, cur, temp.length() + 2);
-
-        Map<String, String> smap = new HashMap<>();
-        addField(sb, FN, (Map<String, String>)null);
-        checkLength(sb, cur, -1);
-
-        addField(sb, FN, smap);
-        checkLength(sb, cur, -1);
-
-        smap.put("foo", "bar");
-        smap.put("bar", "baz");
-        addField(sb, FN, smap);
-        checkLength(sb, cur, 25);
-
-        Map<String, Long> lmap = new HashMap<>();
-        lmap.put("foo", 1L);
-        lmap.put("bar", 2L);
-        addField(sb, FN, lmap);
-        checkLength(sb, cur, 17);
-
-        Map<String, JsonSerializable> jsmap = new HashMap<>();
-        jsmap.put("foo", JsonValue.instance("bar"));
-        jsmap.put("bar", JsonValue.instance(2L));
-        addField(sb, FN, jsmap);
-        checkLength(sb, cur, 21);
-
-        addStrings(sb, FN);
-        checkLength(sb, cur, -1);
-
-        String[] sa = null;
-        addStrings(sb, FN, sa);
-        checkLength(sb, cur, -1);
-
-        sa = new String[0];
-        addStrings(sb, FN, sa);
-        checkLength(sb, cur, -1);
-
-        addStrings(sb, FN, "foo", "bar");
-        checkLength(sb, cur, 13);
-
-        sa = new String[]{"foo", "bar"};
-        addStrings(sb, FN, sa);
-        checkLength(sb, cur, 13);
-
-        List<String> slist = null;
-        addStrings(sb, FN, slist);
-        checkLength(sb, cur, -1);
-
-        slist = new ArrayList<>();
-        addStrings(sb, FN, slist);
-        checkLength(sb, cur, -1);
-
-        slist.add("foo");
-        slist.add("bar");
-        slist.add(null);
-        slist.add("");
-        addStrings(sb, FN, slist);
-        checkLength(sb, cur, 13);
-
-        addIntegers(sb, FN);
-        checkLength(sb, cur, -1);
-
-        Integer[] ia = null;
-        addIntegers(sb, FN, ia);
-        checkLength(sb, cur, -1);
-
-        ia = new Integer[0];
-        addIntegers(sb, FN, ia);
-        checkLength(sb, cur, -1);
-
-        addIntegers(sb, FN, -1, 0, 1);
-        checkLength(sb, cur, 8);
-
-        ia = new Integer[]{-1, 0, 1};
-        addIntegers(sb, FN, ia);
-        checkLength(sb, cur, 8);
-
-        List<Integer> ilist = null;
-        addIntegers(sb, FN, ilist);
-        checkLength(sb, cur, -1);
-
-        ilist = new ArrayList<>();
-        addIntegers(sb, FN, ilist);
-        checkLength(sb, cur, -1);
-
-        ilist.add(-1);
-        ilist.add(0);
         ilist.add(1);
-        ilist.add(null);
-        addIntegers(sb, FN, ilist);
-        checkLength(sb, cur, 8);
+        _addList(sb, "al3", ilist, StringBuilder::append);
+        assertEquals(293, sb.length());
 
-        addLongs(sb, FN);
-        checkLength(sb, cur, -1);
+        ilist.add(2);
+        _addList(sb, "al4", ilist, StringBuilder::append);
+        assertEquals(305, sb.length());
 
-        Long[] la = null;
-        addLongs(sb, FN, la);
-        checkLength(sb, cur, -1);
+        List<String> slist = new ArrayList<>();
+        addStrings(sb, "n/a", slist);
+        assertEquals(305, sb.length());
 
-        la = new Long[0];
-        addLongs(sb, FN, la);
-        checkLength(sb, cur, -1);
+        slist.add("s");
+        addStrings(sb, "slist", slist);
+        assertEquals(319, sb.length());
 
-        addLongs(sb, FN, -1L, 0L, 1L);
-        checkLength(sb, cur, 8);
+        List<Duration> durs = new ArrayList<>();
+        addDurations(sb, "dur1", durs);
+        assertEquals(319, sb.length());
 
-        la = new Long[]{-1L, 0L, 1L};
-        addLongs(sb, FN, la);
-        checkLength(sb, cur, 8);
+        durs.add(Duration.ofMillis(1));
+        addDurations(sb, "dur2", durs);
+        assertEquals(336, sb.length());
 
-        List<Long> llist = null;
-        addLongs(sb, FN, llist);
-        checkLength(sb, cur, -1);
+        addJsons(sb, "n/a", null);
+        assertEquals(336, sb.length());
 
-        llist = new ArrayList<>();
-        addLongs(sb, FN, llist);
-        checkLength(sb, cur, -1);
+        List<JsonValue> jlist = new ArrayList<>();
+        addJsons(sb, "n/a", jlist);
+        assertEquals(336, sb.length());
 
-        llist.add(-1L);
-        llist.add(0L);
-        llist.add(1L);
-        llist.add(null);
-        addLongs(sb, FN, llist);
-        checkLength(sb, cur, 8);
-
-        addJsons(sb, FN, null);
-        checkLength(sb, cur, -1);
-
-        addJsons(sb, FN, new ArrayList<>());
-        checkLength(sb, cur, -1);
-
-        addJsons(sb, FN, jsmap.values());
-        checkLength(sb, cur, 9);
-
-        class ExtendsJs implements JsonSerializable {
-            final String s;
-
-            public ExtendsJs(String s) {
-                this.s = s;
-            }
-
-            @Override
-            public @NotNull String toJson() {
-                return "\"" + FN + "\":\"" + s + "\"";
-            }
-        }
-
-        List<ExtendsJs> elist = new ArrayList<>();
-        elist.add(new ExtendsJs("foo"));
-        elist.add(new ExtendsJs("bar"));
-        addJsons(sb, FN, elist);
-        checkLength(sb, cur, 23);
-
-        List<Duration> dlist = null;
-        addDurations(sb, FN, dlist);
-        checkLength(sb, cur, -1);
-
-        dlist = new ArrayList<>();
-        addDurations(sb, FN, dlist);
-        checkLength(sb, cur, -1);
-
-        dlist.add(Duration.ofNanos(-1));
-        dlist.add(Duration.ZERO);
-        dlist.add(Duration.ofNanos(1));
-        dlist.add(null);
-        addDurations(sb, FN, dlist);
-        checkLength(sb, cur, 8);
-
-        addEnum(sb, FN, (TestEnum)null);
-        checkLength(sb, cur, 0);
-
-        addEnum(sb, FN, TestEnum.FOO);
-        checkLength(sb, cur, 5);
-
-        addEnumWhenNot(sb, FN, null, TestEnum.FOO);
-        checkLength(sb, cur, 0);
-
-        addEnumWhenNot(sb, FN, TestEnum.FOO, TestEnum.BAR);
-        checkLength(sb, cur, 5);
-
-        addEnumWhenNot(sb, FN, TestEnum.BAR, TestEnum.BAR);
-        checkLength(sb, cur, 0);
-    }
-
-    enum TestEnum {
-        FOO, BAR
+        JsonValue jv = new JsonValue("jv");
+        jlist.add(jv);
+        addJsons(sb, "jsons", jlist);
+        assertEquals(351, sb.length());
+        System.out.println(sb);
+        System.out.println(sb.length());
     }
 
     @Test
@@ -451,6 +282,14 @@ public final class JsonWriteUtilsTests {
         assertEquals(-999, safeParseLong(null, -999));
         assertEquals(-999, safeParseLong("notanumber", -999));
         assertEquals(1, safeParseLong("1"));
+    }
+
+    @Test
+    public void testMiscCoverage() {
+        String json = ResourceUtils.resourceAsString("StreamInfo.json");
+        printFormatted(JsonParser.parseUnchecked(json));
+
+        assertEquals("\"JsonWriteUtilsTests\":", toKey(this.getClass()));
     }
 
     @Test
