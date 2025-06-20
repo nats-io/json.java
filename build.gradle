@@ -11,7 +11,7 @@ plugins {
     id 'signing'
 }
 
-def jarVersion = "2.0.1"
+def jarVersion = "2.30.0"
 group = 'io.nats'
 
 def isMerge = System.getenv("BUILD_EVENT") == "push"
@@ -122,7 +122,7 @@ publishing {
                 groupId = group
                 artifactId = archivesBaseName
                 description = 'JSON Parser built specifically for JNATS'
-                url = 'https://github.com/nats-io/nats.java.json'
+                url = 'https://github.com/nats-io/json.java'
                 licenses {
                     license {
                         name = 'The Apache License, Version 2.0'
@@ -138,7 +138,7 @@ publishing {
                     }
                 }
                 scm {
-                    url = 'https://github.com/nats-io/nats.java.json'
+                    url = 'https://github.com/nats-io/json.java'
                 }
             }
         }
