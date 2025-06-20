@@ -1,4 +1,4 @@
-// Copyright 2015-2024 The NATS Authors
+// Copyright 2025 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at:
@@ -13,16 +13,14 @@
 
 package io.nats.json;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 public final class DateTimeUtilsTests {
 
@@ -53,6 +51,13 @@ public final class DateTimeUtilsTests {
 
         assertEquals("2021-01-20T23:41:08.579594000Z", DateTimeUtils.toRfc3339(DateTimeUtils.parseDateTime("2021-01-20T23:41:08.579594Z")));
         assertEquals("2021-02-02T19:18:28.347722551Z", DateTimeUtils.toRfc3339(DateTimeUtils.parseDateTime("2021-02-02T11:18:28.347722551-08:00")));
+    }
+
+    @Test
+    public void testGmtNow() {
+        long now = Instant.now().toEpochMilli();
+        long gnow = DateTimeUtils.gmtNow().toInstant().toEpochMilli();
+        assertTrue(gnow - now < 50);
     }
 
     @Test

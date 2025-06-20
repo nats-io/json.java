@@ -5,9 +5,9 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'jacoco'
-    id 'com.github.kt3k.coveralls' version '2.12.0'
+    id 'com.github.kt3k.coveralls' version '2.12.2'
     id "org.gradle.test-retry" version "1.1.9"
-    id 'io.github.gradle-nexus.publish-plugin' version '1.1.0'
+    id 'io.github.gradle-nexus.publish-plugin' version '2.0.0'
     id 'signing'
 }
 
@@ -21,18 +21,23 @@ def isRelease = System.getenv("BUILD_EVENT") == "release"
 version = isRelease ? jarVersion : jarVersion + "-SNAPSHOT"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 repositories {
     mavenCentral()
     maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+    maven { url "https://repo1.maven.org/maven2/" }
 }
 
 dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.0'
-    testImplementation 'nl.jqno.equalsverifier:equalsverifier:3.12.3'
+    implementation 'org.jetbrains:annotations:26.0.2'
+    implementation 'commons-codec:commons-codec:1.18.0'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
+    testImplementation 'nl.jqno.equalsverifier:equalsverifier:4.0'
 }
 
 test {
@@ -45,9 +50,10 @@ test {
 }
 
 javadoc {
+    options.addBooleanOption('html5', true)
     options.overview = 'src/main/javadoc/overview.html' // relative to source root
     source = sourceSets.main.allJava
-    title = "NATS.IO Java NKeys"
+    title = "NATS.IO JNats JSON"
     classpath = sourceSets.main.runtimeClasspath
     doLast {
         if (!OperatingSystem.current().isWindows()) {
@@ -66,30 +72,24 @@ javadoc {
     }
 }
 
-task javadocJar(type: Jar) {
+tasks.register('javadocJar', Jar) {
     archiveClassifier.set('javadoc')
     from javadoc
 }
 
-task sourcesJar(type: Jar) {
+tasks.register('sourcesJar', Jar) {
     archiveClassifier.set('sources')
     from sourceSets.main.allSource
 }
 
 jacoco {
-    toolVersion = "0.8.6"
+    toolVersion = "0.8.13"
 }
 
 jacocoTestReport {
     reports {
-        xml.enabled = true // coveralls plugin depends on xml format report
-        html.enabled = true
-    }
-    afterEvaluate { // only report on main library not examples
-        classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it,
-                    exclude: ['**/examples**'])
-        }))
+        xml.required = true // coveralls plugin depends on xml format report
+        html.required = true
     }
 }
 
@@ -151,7 +151,6 @@ if (isRelease) {
         def signingKey = System.getenv('SIGNING_KEY')
         def signingPassword = System.getenv('SIGNING_PASSWORD')
         useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
-        sign configurations.archives
         sign publishing.publications.mavenJava
     }
 }
