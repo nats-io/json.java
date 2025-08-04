@@ -75,7 +75,7 @@ public abstract class JsonWriteUtils {
     public static String endFormattedJson(StringBuilder sb) {
         sb.setLength(sb.length()-1);
         sb.append("\n}");
-        return sb.toString().replaceAll(",", ",\n    ");
+        return sb.toString().replace(",", ",\n    ");
     }
 
     /**
