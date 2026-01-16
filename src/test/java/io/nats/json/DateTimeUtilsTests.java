@@ -1,4 +1,7 @@
-// Copyright 2015-2024 The NATS Authors
+// Copyright 2025 The NATS Authors
+//
+// Modifications Copyright 2025-2026 Synadia Communications, Inc.
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at:
@@ -51,6 +54,13 @@ public final class DateTimeUtilsTests {
 
         assertEquals("2021-01-20T23:41:08.579594000Z", DateTimeUtils.toRfc3339(DateTimeUtils.parseDateTime("2021-01-20T23:41:08.579594Z")));
         assertEquals("2021-02-02T19:18:28.347722551Z", DateTimeUtils.toRfc3339(DateTimeUtils.parseDateTime("2021-02-02T11:18:28.347722551-08:00")));
+    }
+
+    @Test
+    public void testGmtNow() {
+        long now = Instant.now().toEpochMilli();
+        long gnow = DateTimeUtils.gmtNow().toInstant().toEpochMilli();
+        assertTrue(gnow - now < 50);
     }
 
     @Test
