@@ -10,22 +10,21 @@ plugins {
     id("signing")
 }
 
-def jarVersion = "3.0.0"
+def jarVersion = "3.0.1"
 group = 'io.nats'
 
 def isRelease = System.getenv("BUILD_EVENT") == "release"
 def tc = System.getenv("TARGET_COMPATIBILITY")
-def targetCompat = tc == "25" ? JavaVersion.VERSION_25 : JavaVersion.VERSION_21
-def jarEnd =       tc == "25" ?  "-jdk25" : ""
-def bundleEnd =    tc == "25" ?  ".jdk25" : ""
-def jarAndArtifactName = "jnats-json" + jarEnd
-def bundleName = "io.nats.jnats.json" + bundleEnd
+def targetId =          tc == "25" ? "25"                   : "21"
+def targetJavaVersion = tc == "25" ? JavaVersion.VERSION_25 : JavaVersion.VERSION_21
+def artifact = "jnats-json-jdk" + targetId
+def bundleName = "io.nats.jnats.json." + targetId
 
-version = isRelease ? jarVersion : jarVersion + "-SNAPSHOT" // version is the variable the build actually uses.
+version = isRelease ? jarVersion : jarVersion + "-SNAPSHOT" // version is the variable the gradle uses.
 
 java {
     sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = targetCompat
+    targetCompatibility = targetJavaVersion
     withSourcesJar()
     withJavadocJar()
 }
@@ -55,7 +54,7 @@ jar {
                 "Bundle-Vendor": "nats.io",
                 "Bundle-Description": "JNats JSON Utility",
                 "Bundle-DocURL": "https://github.com/nats-io/jnats.json",
-                "Target-Compatibility": "Java " + targetCompat
+                "Target-Compatibility": "Java " + targetJavaVersion
         )
     }
 }
@@ -109,7 +108,7 @@ publishing {
                 url = 'https://github.com/nats-io/jnats.json'
 
                 groupId = group
-                artifactId = jarAndArtifactName
+                artifactId = artifact
 
                 licenses {
                     license {
