@@ -53,7 +53,7 @@ jar {
         bnd("Bundle-Name": bundleName,
                 "Bundle-Vendor": "nats.io",
                 "Bundle-Description": "JNats JSON Utility",
-                "Bundle-DocURL": "https://github.com/nats-io/jnats.json",
+                "Bundle-DocURL": "https://github.com/nats-io/jnats-json",
                 "Target-Compatibility": "Java " + targetJavaVersion
         )
     }
@@ -105,7 +105,7 @@ publishing {
             pom {
                 name = 'JNats JSON Utility'
                 description = 'JSON Parser originally built for JNATS'
-                url = 'https://github.com/nats-io/jnats.json'
+                url = 'https://github.com/nats-io/jnats-json'
 
                 groupId = group
                 artifactId = artifact
@@ -126,7 +126,7 @@ publishing {
                     }
                 }
                 scm {
-                    url = 'https://github.com/nats-io/jnats.json'
+                    url = 'https://github.com/nats-io/jnats-json'
                 }
             }
         }

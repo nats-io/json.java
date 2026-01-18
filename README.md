@@ -12,9 +12,9 @@ It has been extracted and repackaged from the JNATS library since it is also use
 [![Maven JDK 21](https://img.shields.io/maven-central/v/io.nats/jnats-json-jdk21)](https://mvnrepository.com/artifact/io.nats/jnats-json-jdk21)
 [![Maven JDK 25](https://img.shields.io/maven-central/v/io.nats/jnats-json-jdk25)](https://mvnrepository.com/artifact/io.nats/jnats-json-jdk25)
 [![Javadoc](http://javadoc.io/badge/io.nats/jnats-json-jdk21.svg?branch=main)](http://javadoc.io/doc/io.nats/jnats-json-jdk21?branch=main)
-[![Coverage Status](https://coveralls.io/repos/github/nats-io/jnats.json/badge.svg?branch=main)](https://coveralls.io/github/nats-io/jnats.json?branch=main)
-[![Build Main Badge](https://github.com/nats-io/jnats.json/actions/workflows/build-main.yml/badge.svg?event=push)](https://github.com/nats-io/jnats.json/actions/workflows/build-main.yml)
-[![Release Badge](https://github.com/nats-io/jnats.json/actions/workflows/build-release.yml/badge.svg?event=release)](https://github.com/nats-io/jnats.json/actions/workflows/build-release.yml)
+[![Coverage Status](https://coveralls.io/repos/github/nats-io/jnats-json/badge.svg?branch=main)](https://coveralls.io/github/nats-io/jnats-json?branch=main)
+[![Build Main Badge](https://github.com/nats-io/jnats-json/actions/workflows/build-main.yml/badge.svg?event=push)](https://github.com/nats-io/jnats-json/actions/workflows/build-main.yml)
+[![Release Badge](https://github.com/nats-io/jnats-json/actions/workflows/build-release.yml/badge.svg?event=release)](https://github.com/nats-io/jnats-json/actions/workflows/build-release.yml)
 
 ### JDK Version
 
