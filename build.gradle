@@ -10,7 +10,7 @@ plugins {
     id("signing")
 }
 
-def jarVersion = "3.0.2"
+def jarVersion = "3.0.3"
 group = 'io.nats'
 
 def isRelease = System.getenv("BUILD_EVENT") == "release"
@@ -18,7 +18,7 @@ def tc = System.getenv("TARGET_COMPATIBILITY")
 def targetId =          tc == "25" ? "25"                   : "21"
 def targetJavaVersion = tc == "25" ? JavaVersion.VERSION_25 : JavaVersion.VERSION_21
 def artifact = "jnats-json-jdk" + targetId
-def bundleName = "io.nats.jnats.json.jdk." + targetId
+def bundleName = "io.nats.jnats.json.jdk" + targetId
 
 version = isRelease ? jarVersion : jarVersion + "-SNAPSHOT" // version is the variable the gradle uses.
 
