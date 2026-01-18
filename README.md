@@ -9,8 +9,8 @@ It has been extracted and repackaged from the JNATS library since it is also use
 **Current Release**: 3.0.1 &nbsp; **Current Snapshot**: 3.0.2-SNAPSHOT
 
 [![License Apache 2](https://img.shields.io/badge/License-Apache2-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.nats/jnats-json/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.nats/jnats-json)
-[![Maven Central](https://img.shields.io/maven-central/v/io.nats/jnats-json)](https://img.shields.io/maven-central/v/io.nats/jnats-json)
+[![Maven JDK 21](https://img.shields.io/maven-central/v/io.nats/jnats-json-jdk21)](https://mvnrepository.com/artifact/io.nats/jnats-json-jdk21)
+[![Maven JDK 25](https://img.shields.io/maven-central/v/io.nats/jnats-json-jdk25)](https://mvnrepository.com/artifact/io.nats/jnats-json-jdk25)
 [![Javadoc](http://javadoc.io/badge/io.nats/jnats-json.svg?branch=main)](http://javadoc.io/doc/io.nats/jnats-json?branch=main)
 [![Coverage Status](https://coveralls.io/repos/github/nats-io/json.java/badge.svg?branch=main)](https://coveralls.io/github/nats-io/json.java?branch=main)
 [![Build Main Badge](https://github.com/nats-io/json.java/actions/workflows/build-main.yml/badge.svg?event=push)](https://github.com/nats-io/json.java/actions/workflows/build-main.yml)
