@@ -6,15 +6,16 @@ This library is a JSON Parser built specifically for JNATS to avoid a 3rd party 
 
 It has been extracted and repackaged from the JNATS library since it is also used by the [jwt.java](https://github.com/nats-io/jwt.java) library.
 
-**Current Release**: 3.0.1 &nbsp; **Current Snapshot**: 3.0.2-SNAPSHOT
+![3.0.1](https://img.shields.io/badge/Current_Release-3.0.1-27AAE0?style=for-the-badge)
+![3.0.2](https://img.shields.io/badge/Current_Snapshot-3.0.2--SNAPSHOT-27AAE0?style=for-the-badge)
 
-[![License Apache 2](https://img.shields.io/badge/License-Apache2-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
-[![Maven JDK 21](https://img.shields.io/maven-central/v/io.nats/jnats-json-jdk21)](https://mvnrepository.com/artifact/io.nats/jnats-json-jdk21)
-[![Maven JDK 25](https://img.shields.io/maven-central/v/io.nats/jnats-json-jdk25)](https://mvnrepository.com/artifact/io.nats/jnats-json-jdk25)
-[![Javadoc](http://javadoc.io/badge/io.nats/jnats-json-jdk21.svg?branch=main)](http://javadoc.io/doc/io.nats/jnats-json-jdk21?branch=main)
-[![Coverage Status](https://coveralls.io/repos/github/nats-io/jnats-json/badge.svg?branch=main)](https://coveralls.io/github/nats-io/jnats-json?branch=main)
 [![Build Main Badge](https://github.com/nats-io/jnats-json/actions/workflows/build-main.yml/badge.svg?event=push)](https://github.com/nats-io/jnats-json/actions/workflows/build-main.yml)
-[![Release Badge](https://github.com/nats-io/jnats-json/actions/workflows/build-release.yml/badge.svg?event=release)](https://github.com/nats-io/jnats-json/actions/workflows/build-release.yml)
+[![Coverage Status](https://coveralls.io/repos/github/nats-io/jnats-json/badge?branch=main)](https://coveralls.io/github/nats-io/jnats-json?branch=main)
+[![Maven JDK 21](https://img.shields.io/maven-central/v/io.nats/jnats-json-jdk21?label=maven-central-jdk21)](https://mvnrepository.com/artifact/io.nats/jnats-json-jdk21)
+[![Maven JDK 25](https://img.shields.io/maven-central/v/io.nats/jnats-json-jdk25?label=maven-central-jdk25)](https://mvnrepository.com/artifact/io.nats/jnats-json-jdk25)
+[![Javadoc](http://javadoc.io/badge/io.nats/jnats-json-jdk21.svg?branch=main)](http://javadoc.io/doc/io.nats/jnats-json-jdk21?branch=main)
+[![License Apache 2](https://img.shields.io/badge/License-Apache2-blue)](https://www.apache.org/licenses/LICENSE-2.0)
+
 
 ### JDK Version
 
