@@ -6,8 +6,8 @@ This library is a JSON Parser built specifically for JNATS to avoid a 3rd party 
 
 It has been extracted and repackaged from the JNATS library since it is also used by the [jwt.java](https://github.com/nats-io/jwt.java) library.
 
-![3.0.1](https://img.shields.io/badge/Current_Release-3.0.1-27AAE0?style=for-the-badge)
-![3.0.2](https://img.shields.io/badge/Current_Snapshot-3.0.2--SNAPSHOT-27AAE0?style=for-the-badge)
+![3.0.3](https://img.shields.io/badge/Current_Release-3.0.3-27AAE0?style=for-the-badge)
+![3.0.4](https://img.shields.io/badge/Current_Snapshot-3.0.4--SNAPSHOT-27AAE0?style=for-the-badge)
 
 [![Build Main Badge](https://github.com/nats-io/jnats-json/actions/workflows/build-main.yml/badge.svg?event=push)](https://github.com/nats-io/jnats-json/actions/workflows/build-main.yml)
 [![Coverage Status](https://coveralls.io/repos/github/nats-io/jnats-json/badge?branch=main)](https://coveralls.io/github/nats-io/jnats-json?branch=main)
@@ -15,7 +15,6 @@ It has been extracted and repackaged from the JNATS library since it is also use
 [![Maven JDK 25](https://img.shields.io/maven-central/v/io.nats/jnats-json-jdk25?label=maven-central-jdk25)](https://mvnrepository.com/artifact/io.nats/jnats-json-jdk25)
 [![Javadoc](http://javadoc.io/badge/io.nats/jnats-json-jdk21.svg?branch=main)](http://javadoc.io/doc/io.nats/jnats-json-jdk21?branch=main)
 [![License Apache 2](https://img.shields.io/badge/License-Apache2-blue)](https://www.apache.org/licenses/LICENSE-2.0)
-
 
 ### JDK Version
 
@@ -35,7 +34,7 @@ The examples shown use the jdk 21 version, to the jdk 25 version just change the
 
 ```groovy
 dependencies {
-    implementation 'io.nats:jnats-json-jdk21:3.0.1'
+    implementation 'io.nats:jnats-json-jdk21:3.0.3'
 }
 ```
 
@@ -61,7 +60,7 @@ repositories {
 }
 
 dependencies {
-   implementation 'io.nats:jnats-json-jdk21:3.0.2-SNAPSHOT'
+   implementation 'io.nats:jnats-json-jdk21:3.0.4-SNAPSHOT'
 }
 ```
 
@@ -71,7 +70,7 @@ dependencies {
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>jnats-json-jdk21</artifactId>
-    <version>3.0.1</version>
+    <version>3.0.3</version>
 </dependency>
 ```
 
@@ -105,10 +104,9 @@ If you need a snapshot version, you must enable snapshots and change your depend
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>jnats-json-jdk21</artifactId>
-    <version>3.0.2-SNAPSHOT</version>
+    <version>3.0.4-SNAPSHOT</version>
 </dependency>
 ```
-
 
 ## License
 
