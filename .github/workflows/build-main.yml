@@ -10,7 +10,7 @@ jobs:
   build:
     strategy:
       matrix:
-        jdk: [ 21, 25 ]
+        jdk: [ 8, 17, 21, 25 ]
     runs-on: ubuntu-latest
     env:
       BUILD_EVENT: ${{ github.event_name }}
