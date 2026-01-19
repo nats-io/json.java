@@ -1,6 +1,4 @@
-// Copyright 2020-2025 The NATS Authors
-//
-// Modifications Copyright 2025-2026 Synadia Communications, Inc.
+// Copyright 2020-2026 The NATS Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -332,7 +330,7 @@ public final class JsonValueUtilsTests {
         });
 
         assertEquals(1, strings.size());
-        assertEquals(STRING_STRING, strings.getFirst());
+        assertEquals(STRING_STRING, strings.get(0));
     }
 
     @Test
@@ -578,6 +576,7 @@ public final class JsonValueUtilsTests {
     @Test
     public void testGetIntLong() {
         JsonValue x = readValue(TEST_JV, STRING);
+        assertNotNull(x);
         JsonValue i = new JsonValue(Integer.MAX_VALUE);
         JsonValue li = new JsonValue((long)Integer.MAX_VALUE);
         JsonValue lmax = new JsonValue(Long.MAX_VALUE);

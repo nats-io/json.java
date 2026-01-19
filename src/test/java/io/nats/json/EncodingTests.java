@@ -1,6 +1,4 @@
-// Copyright 2025 The NATS Authors
-//
-// Modifications Copyright 2025-2026 Synadia Communications, Inc.
+// Copyright 2025-2026 The NATS Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,9 +17,9 @@ package io.nats.json;
 import io.ResourceUtils;
 import org.junit.jupiter.api.Test;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Objects;
 
 import static io.nats.json.Encoding.*;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -70,7 +68,12 @@ public final class EncodingTests {
         String decoded = jsonDecode(encodedInput);
         assertEquals(targetDecode, decoded);
         String encoded = jsonEncode(new StringBuilder(), decoded).toString();
-        assertEquals(Objects.requireNonNullElse(targetEncode, encodedInput), encoded);
+        if (targetEncode == null) {
+            assertEquals(encodedInput, encoded);
+        }
+        else {
+            assertEquals(targetEncode, encoded);
+        }
     }
 
     @Test
@@ -123,7 +126,7 @@ public final class EncodingTests {
     }
 
     @Test
-    public void testBase64UrlEncoding() {
+    public void testBase64UrlEncoding() throws UnsupportedEncodingException {
         String text = "blahblah";
         byte[] btxt = text.getBytes();
         String surl = "https://nats.io/";

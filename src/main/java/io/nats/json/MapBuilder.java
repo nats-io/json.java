@@ -1,4 +1,4 @@
-// Copyright 2025-2026 Synadia Communications, Inc.
+// Copyright 2025-2026 The NATS Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,7 +57,6 @@ public class MapBuilder implements JsonSerializable {
     public MapBuilder put(@NonNull String key, @Nullable Object value) {
         //noinspection DataFlowIssue // NO ISSUE, WE KNOW jv.map is NOT NULL
         jv.map.put(key, JsonValue.instance(value));
-        //noinspection DataFlowIssue // NO ISSUE, WE KNOW jv.mapOrder is NOT NULL
         jv.mapOrder.add(key);
         return this;
     }
@@ -75,7 +74,6 @@ public class MapBuilder implements JsonSerializable {
                 String key = entry.getKey();
                 //noinspection DataFlowIssue // NO ISSUE, WE KNOW jv.map is NOT NULL
                 jv.map.put(key, JsonValue.instance(entry.getValue()));
-                //noinspection DataFlowIssue // NO ISSUE, WE KNOW jv.mapOrder is NOT NULL
                 jv.mapOrder.add(key);
             }
         }

@@ -1,4 +1,4 @@
-// Copyright 2025-2026 Synadia Communications, Inc.
+// Copyright 2025-2026 The NATS Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -71,5 +71,5 @@ public enum JsonValueType {
     /**
      * Type for a JsonValue of a null
      */
-    NULL;
+    NULL
 }
