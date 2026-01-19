@@ -265,7 +265,11 @@ public final class JsonParsingTests {
         List<JsonValue> mappedList2 = parse(new JsonValue(mappedList).toJson()).array;
         List<JsonValue> mappedArray = new JsonValue(list.toArray(new JsonValue[0])).array;
         List<JsonValue> mappedArray2 = parse(new JsonValue(list.toArray(new JsonValue[0])).toJson()).array;
-        for (int i = 0; i < list.size(); i++) {
+        assertNotNull(mappedList);
+        assertNotNull(mappedList2);
+        assertNotNull(mappedArray);
+        assertNotNull(mappedArray2);
+        for (int i = 0; i < mappedList.size(); i++) {
             JsonValue v = list.get(i);
             JsonValue lv = mappedList.get(i);
             JsonValue lv2 = mappedList2.get(i);
@@ -393,7 +397,7 @@ public final class JsonParsingTests {
         assertNotNull(v);
         assertNotNull(v.array);
         assertEquals(1, v.array.size());
-        assertEquals("foo", v.array.getFirst().string);
+        assertEquals("foo", v.array.get(0).string);
 
         String s = "foo \b \t \n \f \r \" \\ /";
         String j = "\"" + jsonEncode(s) + "\"";

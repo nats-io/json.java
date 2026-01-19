@@ -20,6 +20,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -305,7 +306,7 @@ public abstract class Encoding {
      * @param source the input
      * @return the decoded URI
      */
-    public static String uriDecode(@NonNull String source) {
-        return URLDecoder.decode(source.replace("+", "%2B"), StandardCharsets.UTF_8);
+    public static String uriDecode(@NonNull String source) throws UnsupportedEncodingException {
+        return URLDecoder.decode(source.replace("+", "%2B"), StandardCharsets.UTF_8.name());
     }
 }

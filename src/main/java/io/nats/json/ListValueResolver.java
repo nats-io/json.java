@@ -40,5 +40,5 @@ public interface ListValueResolver<T> {
      * @param sb the target StringBuilder
      * @param t  the object
      */
-    void append(@NonNull StringBuilder sb, @Nullable T t);
+    void append(@NonNull StringBuilder sb, @NonNull T t);
 }

@@ -159,7 +159,7 @@ public class JsonValue implements JsonSerializable {
      * A list of field names used for ordering the fields when resolving toJson,
      * when the object is a map
      */
-    @Nullable
+    @NonNull
     public final List<String> mapOrder;
 
     /**
@@ -168,23 +168,50 @@ public class JsonValue implements JsonSerializable {
      * @return a JsonValue
      */
     public static JsonValue instance(Object o) {
-        return switch (o) {
-            case null -> JsonValue.NULL;
-            case String string -> new JsonValue(string);
-            case JsonValue jsonValue -> jsonValue;
-            case JsonSerializable jsonSerializable -> jsonSerializable.toJsonValue();
-            case Boolean b -> new JsonValue(b);
-            case Integer i -> new JsonValue(i);
-            case Long l -> new JsonValue(l);
-            case Double d -> new JsonValue(d);
-            case Float v -> new JsonValue(v);
-            case BigDecimal bigDecimal -> new JsonValue(bigDecimal);
-            case BigInteger bigInteger -> new JsonValue(bigInteger);
-            case Collection<?> list -> _instance(list);
-            case Map<?, ?> map -> _instance(map);
-            case Duration dur -> new JsonValue(dur.toNanos());
-            default -> new JsonValue(o.toString());
-        };
+        if (o == null) {
+            return JsonValue.NULL;
+        }
+        if (o instanceof JsonValue) {
+            return (JsonValue)o;
+        }
+        if (o instanceof JsonSerializable) {
+            return ((JsonSerializable)o).toJsonValue();
+        }
+        if (o instanceof Map<?, ?>) {
+            return _instance((Map<?, ?>)o);
+        }
+        if (o instanceof Collection<?>) {
+            return _instance((Collection<?>)o);
+        }
+        if (o instanceof String) {
+            String s = ((String)o).trim();
+            return new JsonValue(s);
+        }
+        if (o instanceof Boolean) {
+            return new JsonValue((Boolean)o);
+        }
+        if (o instanceof Integer) {
+            return new JsonValue((Integer)o);
+        }
+        if (o instanceof Long) {
+            return new JsonValue((Long)o);
+        }
+        if (o instanceof Double) {
+            return new JsonValue((Double)o);
+        }
+        if (o instanceof Float) {
+            return new JsonValue((Float)o);
+        }
+        if (o instanceof BigDecimal) {
+            return new JsonValue((BigDecimal)o);
+        }
+        if (o instanceof BigInteger) {
+            return new JsonValue((BigInteger)o);
+        }
+        if (o instanceof Duration) {
+            return new JsonValue(((Duration)o).toNanos());
+        }
+        return new JsonValue(o.toString());
     }
 
     private static JsonValue _instance(Collection<?> list) {
@@ -212,7 +239,7 @@ public class JsonValue implements JsonSerializable {
     }
 
     /**
-     * Create a JsonValue from a character. It becomes JsonValueType.STRING
+     * Create a JsonValue from a character. It becomes {@code JsonValueType.STRING}
      * @param c the character
      */
     public JsonValue(char c) {
@@ -311,7 +338,7 @@ public class JsonValue implements JsonSerializable {
                       @Nullable Collection<JsonValue> array)
     {
         this.map = map;
-        this.mapOrder = map == null ? null : new ArrayList<>();
+        this.mapOrder = new ArrayList<>();
         this.array = array == null ? null : new ArrayList<>(array);
         this.string = string;
         this.bool = bool;
@@ -412,31 +439,27 @@ public class JsonValue implements JsonSerializable {
     }
 
     public void setMapOrder(String... keys) {
-        if (mapOrder == null) {
+        if (type != JsonValueType.MAP) {
             throw new IllegalStateException("JsonValue does not represent a map.");
         }
         mapOrder.clear();
         if (keys != null) {
-            for (String key : keys) {
-                mapOrder.add(key);
-            }
+            Collections.addAll(mapOrder, keys);
         }
     }
 
     public void setMapOrder(List<String> keys) {
-        if (mapOrder == null) {
+        if (type != JsonValueType.MAP) {
             throw new IllegalStateException("JsonValue does not represent a map.");
         }
         mapOrder.clear();
         if (keys != null) {
-            for (String key : keys) {
-                mapOrder.add(key);
-            }
+            mapOrder.addAll(keys);
         }
     }
 
     public void addMapOrder(String key) {
-        if (mapOrder == null) {
+        if (type != JsonValueType.MAP) {
             throw new IllegalStateException("JsonValue does not represent a map.");
         }
         mapOrder.add(key);
@@ -471,23 +494,23 @@ public class JsonValue implements JsonSerializable {
         return this;
     }
 
-    @SuppressWarnings("DataFlowIssue") // by checking the type we know what the backing item is
+    @SuppressWarnings("DataFlowIssue") // we check the type and know the backing item is not null
     @Override
     @NonNull
     public String toJson() {
-        return switch (type) {
-            case STRING -> QUOTE + jsonEncode(string) + QUOTE;
-            case BOOL -> Boolean.toString(bool).toLowerCase();
-            case MAP -> mapString();
-            case ARRAY -> listString();
-            case INTEGER -> i.toString();
-            case LONG -> l.toString();
-            case DOUBLE -> d.toString();
-            case FLOAT -> f.toString();
-            case BIG_DECIMAL -> bd.toString();
-            case BIG_INTEGER -> bi.toString();
-            default -> NULL_STR;
-        };
+        switch (type) {
+            case STRING:      return QUOTE + jsonEncode(string) + QUOTE;
+            case BOOL:        return Boolean.toString(bool).toLowerCase();
+            case MAP:         return mapString();
+            case ARRAY:       return listString();
+            case INTEGER:     return i.toString();
+            case LONG:        return l.toString();
+            case DOUBLE:      return d.toString();
+            case FLOAT:       return f.toString();
+            case BIG_DECIMAL: return bd.toString();
+            case BIG_INTEGER: return bi.toString();
+            default:          return NULL_STR;
+        }
     }
 
     @SuppressWarnings("DataFlowIssue") // by checking the type we know that the map is not null
@@ -516,7 +539,7 @@ public class JsonValue implements JsonSerializable {
         return JsonWriteUtils.endArray(sba).toString();
     }
 
-    @SuppressWarnings("DataFlowIssue") //  can't be TYPE if type value was null
+    @SuppressWarnings("DataFlowIssue") // by checking the type we know that the value is not null
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -526,38 +549,39 @@ public class JsonValue implements JsonSerializable {
 
         if (type != jsonValue.type) return false;
 
-        return switch (type) {
-            case STRING -> string.equals(jsonValue.string);
-            case BOOL -> bool.equals(jsonValue.bool);
-            case INTEGER -> i.equals(jsonValue.i);
-            case LONG -> l.equals(jsonValue.l);
-            case DOUBLE -> d.equals(jsonValue.d);
-            case FLOAT -> f.equals(jsonValue.f);
-            case BIG_DECIMAL -> bd.equals(jsonValue.bd);
-            case BIG_INTEGER -> bi.equals(jsonValue.bi);
-            case MAP -> map.equals(jsonValue.map);
-            case ARRAY -> array.equals(jsonValue.array);
-            case NULL -> true; // null has null value, type was already checked.
-        };
+        switch (type) {
+            case STRING: return string.equals(jsonValue.string);
+            case BOOL: return bool.equals(jsonValue.bool);
+            case INTEGER: return i.equals(jsonValue.i);
+            case LONG: return l.equals(jsonValue.l);
+            case DOUBLE: return d.equals(jsonValue.d);
+            case FLOAT: return f.equals(jsonValue.f);
+            case BIG_DECIMAL: return bd.equals(jsonValue.bd);
+            case BIG_INTEGER: return bi.equals(jsonValue.bi);
+            case MAP: return map.equals(jsonValue.map);
+            case ARRAY: return array.equals(jsonValue.array);
+            case NULL: return true; // null has null value, type was already checked.
+        }
+        return false;
     }
 
-    @SuppressWarnings("DataFlowIssue") //  can't be TYPE if type value was null
+    @SuppressWarnings("DataFlowIssue") // by checking the type we know that the value is not null
     @Override
     public int hashCode() {
-        return (31 *
-            switch (type) {
-                case STRING -> string.hashCode();
-                case BOOL -> bool.hashCode();
-                case INTEGER -> i.hashCode();
-                case LONG -> l.hashCode();
-                case DOUBLE -> d.hashCode();
-                case FLOAT -> f.hashCode();
-                case BIG_DECIMAL -> bd.hashCode();
-                case BIG_INTEGER -> bi.hashCode();
-                case MAP -> map.hashCode();
-                case ARRAY -> array.hashCode();
-                default -> 0;
-            })
-            + type.hashCode();
+
+        int hc = 0;
+        switch (type) {
+            case STRING: hc = string.hashCode(); break;
+            case BOOL: hc = bool.hashCode(); break;
+            case INTEGER: hc = i.hashCode(); break;
+            case LONG: hc = l.hashCode(); break;
+            case DOUBLE: hc = d.hashCode(); break;
+            case FLOAT: hc = f.hashCode(); break;
+            case BIG_DECIMAL: hc = bd.hashCode(); break;
+            case BIG_INTEGER: hc = bi.hashCode(); break;
+            case MAP: hc = map.hashCode(); break;
+            case ARRAY: hc = array.hashCode(); break;
+        }
+        return 31 * hc + type.hashCode();
     }
 }

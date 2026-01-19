@@ -71,5 +71,5 @@ public enum JsonValueType {
     /**
      * Type for a JsonValue of a null
      */
-    NULL;
+    NULL
 }
