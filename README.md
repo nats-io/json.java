@@ -6,8 +6,8 @@ This library is a JSON Parser built specifically for JNATS to avoid a 3rd party 
 
 It has been extracted and repackaged from the JNATS library since it is also used by the [jwt.java](https://github.com/nats-io/jwt.java) library.
 
-![3.0.3](https://img.shields.io/badge/Current_Release-3.0.3-27AAE0?style=for-the-badge)
-![3.0.4](https://img.shields.io/badge/Current_Snapshot-3.0.4--SNAPSHOT-27AAE0?style=for-the-badge)
+![3.0.4](https://img.shields.io/badge/Current_Release-3.0.4-27AAE0?style=for-the-badge)
+![3.0.5](https://img.shields.io/badge/Current_Snapshot-3.0.5--SNAPSHOT-27AAE0?style=for-the-badge)
 
 [![Build Main Badge](https://github.com/nats-io/jnats-json/actions/workflows/build-main.yml/badge.svg?event=push)](https://github.com/nats-io/jnats-json/actions/workflows/build-main.yml)
 [![Coverage Status](https://coveralls.io/repos/github/nats-io/jnats-json/badge?branch=main)](https://coveralls.io/github/nats-io/jnats-json?branch=main)
@@ -38,7 +38,7 @@ The examples shown use the Jdk 8 version. To use other versions, change the arti
 
 ```groovy
 dependencies {
-    implementation 'io.nats:jnats-json:3.0.3'
+    implementation 'io.nats:jnats-json:3.0.4'
 }
 ```
 
@@ -64,7 +64,7 @@ repositories {
 }
 
 dependencies {
-   implementation 'io.nats:jnats-json:3.0.4-SNAPSHOT'
+   implementation 'io.nats:jnats-json:3.0.5-SNAPSHOT'
 }
 ```
 
@@ -74,7 +74,7 @@ dependencies {
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>jnats-json</artifactId>
-    <version>3.0.3</version>
+    <version>3.0.4</version>
 </dependency>
 ```
 
@@ -108,7 +108,7 @@ If you need a snapshot version, you must enable snapshots and change your depend
 <dependency>
     <groupId>io.nats</groupId>
     <artifactId>jnats-json</artifactId>
-    <version>3.0.4-SNAPSHOT</version>
+    <version>3.0.5-SNAPSHOT</version>
 </dependency>
 ```
 
