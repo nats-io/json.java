@@ -11,8 +11,6 @@ It has been extracted and repackaged from the JNATS library since it is also use
 
 [![Build Main Badge](https://github.com/nats-io/jnats-json/actions/workflows/build-main.yml/badge.svg?event=push)](https://github.com/nats-io/jnats-json/actions/workflows/build-main.yml)
 [![Coverage Status](https://coveralls.io/repos/github/nats-io/jnats-json/badge?branch=main)](https://coveralls.io/github/nats-io/jnats-json?branch=main)
-[![Maven JDK 21](https://img.shields.io/maven-central/v/io.nats/jnats-json?label=maven-central)](https://mvnrepository.com/artifact/io.nats/jnats-json)
-[![Maven JDK 25](https://img.shields.io/maven-central/v/io.nats/jnats-json-jdk25?label=maven-central-jdk25)](https://mvnrepository.com/artifact/io.nats/jnats-json-jdk25)
 [![Javadoc](http://javadoc.io/badge/io.nats/jnats-json.svg?branch=main)](http://javadoc.io/doc/io.nats/jnats-json?branch=main)
 [![License Apache 2](https://img.shields.io/badge/License-Apache2-blue)](https://www.apache.org/licenses/LICENSE-2.0)
 
@@ -21,12 +19,12 @@ It has been extracted and repackaged from the JNATS library since it is also use
 This project uses Java 8 Language Level api, but builds jars compiled with and targeted for Java 8, 17, 21 and 25.
 It creates different artifacts for each. All have the same group id `io.nats` and the same version but have different artifact names. 
 
-|  Java Target Level  | artifact id      |
-|:-------------------:|------------------|
-|          8          | jnats-json       |
-|         17          | jnats-json-jdk17 |
-|         21          | jnats-json-jdk21 |
-|         25          | jnats-json-jdk25 |
+| Java Target Level | Artifact Id        |                                                                     Maven Central                                                                      |
+|:-----------------:|--------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------:|
+|        1.8        | `jnats-json`       |   [![Maven JDK 1_8](https://img.shields.io/maven-central/v/io.nats/jnats-json-jdk17?label=)](https://mvnrepository.com/artifact/io.nats/jnats-json)    |
+|        17         | `jnats-json-jdk17` | [![Maven JDK 17](https://img.shields.io/maven-central/v/io.nats/jnats-json-jdk17?label=)](https://mvnrepository.com/artifact/io.nats/jnats-json-jdk17) |
+|        21         | `jnats-json-jdk21` | [![Maven JDK 21](https://img.shields.io/maven-central/v/io.nats/jnats-json-jdk21?label=)](https://mvnrepository.com/artifact/io.nats/jnats-json-jdk21) |
+|        25         | `jnats-json-jdk25` | [![Maven JDK 25](https://img.shields.io/maven-central/v/io.nats/jnats-json-jdk25?label=)](https://mvnrepository.com/artifact/io.nats/jnats-json-jdk25) |
 
 ### Dependency Management
 
