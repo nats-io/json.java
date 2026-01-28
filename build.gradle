@@ -40,8 +40,8 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.jspecify:jspecify:1.0.0'
-    implementation 'commons-codec:commons-codec:1.20.0'
+    api 'org.jspecify:jspecify:1.0.0'
+    api 'commons-codec:commons-codec:1.20.0'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.14.1'
 
